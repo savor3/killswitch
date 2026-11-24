@@ -1,0 +1,12 @@
+node_modules/
+contracts/out/
+contracts/cache/
+data/
+deployments/*.local.json
+.env
+dist/
+
+# never commit
+*.env
+!.env.example
+.DS_Store

@@ -1,0 +1,37 @@
+{
+  "name": "killswitch",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "abi": "tsx scripts/export-abi.ts",
+    "chain": "anvil --block-time 1 --silent",
+    "deploy": "tsx scripts/deploy.ts",
+    "relay": "tsx services/relay/index.ts",
+    "dashboard": "vite --config apps/dashboard/vite.config.ts",
+    "mcp": "tsx packages/mcp/server.ts",
+    "demo": "tsx scripts/demo.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "traffic": "tsx scripts/traffic.ts",
+    "mcp:smoke": "tsx scripts/mcp-smoke.ts",
+    "test": "cd contracts && forge test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
+    "@hono/node-server": "^2.1.11",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "hono": "^4.13.19",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "viem": "^2.58.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}
