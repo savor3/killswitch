@@ -72,6 +72,15 @@ export function App() {
     if (pref === "browser") browserOwner(cfg).then(setOwner).catch(() => {});
     else if (pref === "dev" || cfg.chainId === 31337) setOwner(devOwner(cfg));
   }, [cfg]);
+  // Testnet: top up a fresh MetaMask owner with a little gas so they can sign without a faucet.
+  useEffect(() => {
+    if (!cfg || !pub || !owner || owner.kind !== "browser" || !(cfg as any).gasDrip) return;
+    pub.getBalance({ address: owner.address }).then((bal) => {
+      if (bal >= 200_000_000_000_000n) return;
+      return api<{ sent: boolean }>("/v1/gas", { method: "POST", body: JSON.stringify({ address: owner.address }) })
+        .then((r) => r.sent && toast("info", "Sent you a little test ETH for gas."));
+    }).catch((e) => toast("warn", `Couldn't send test gas: ${e.message}`));
+  }, [cfg, pub, owner, toast]);
   useEffect(() => {
     if (!cfg || !pub) return;
     pub.readContract({ address: cfg.dex, abi: MockDEXAbi as any, functionName: "quote", args: [cfg.tokens.WETH.address, 10n ** 18n] })
@@ -405,7 +414,7 @@ function HomePage({ cfg, info, ops, prices, busy, held, go, decide, onNew, onKil
         <section className="card checklist">
           <div className="sec-h"><h2>Get started</h2><span className="muted small">{[funded, info.agents.length > 0, ops.length > 0].filter(Boolean).length} of 3 done</span></div>
           <ChecklistItem done={funded} title="Add funds" text="Move in only what your agents should be able to use.">
-            {cfg.chainId === 31337 && <button className="sm" disabled={!!busy} onClick={faucet}>Add 1,000 test USDC</button>}
+            {cfg.chainId !== 8453 && <button className="sm" disabled={!!busy} onClick={faucet}>Add 1,000 test USDC</button>}
           </ChecklistItem>
           <ChecklistItem done={info.agents.length > 0} title="Add your first agent" text="Pick what it may do and how much it may spend.">
             <button className="sm primary" disabled={!!busy || !funded} onClick={onNew}>Add agent</button>
@@ -424,7 +433,7 @@ function HomePage({ cfg, info, ops, prices, busy, held, go, decide, onNew, onKil
             ))}
             {!funded && <span className="muted small">Empty</span>}
           </div>
-          {cfg.chainId === 31337 && funded && <button className="link" disabled={!!busy} onClick={faucet}><Icon name="plus" size={14} /> Add test USDC</button>}
+          {cfg.chainId !== 8453 && funded && <button className="link" disabled={!!busy} onClick={faucet}><Icon name="plus" size={14} /> Add test USDC</button>}
         </div>
         <div className="card stat">
           <div className="eyebrow">Max your agents can spend today</div>
@@ -849,8 +858,10 @@ function ConnectModal({ c, cfg, onClose }: { c: Created; cfg: Config; onClose: (
   const [tab, setTab] = useState<"code" | "desktop" | "sdk">("code");
   const [reveal, setReveal] = useState(false);
   const [copied, setCopied] = useState("");
-  const relay = `${location.protocol}//${location.hostname}:8787`;
-  const root = (cfg as any).root ?? "/path/to/killswitch";
+  const local = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "5175";
+  const relay = local ? `${location.protocol}//${location.hostname}:8787` : location.origin;
+  const hosted = !!(cfg as any).hosted;
+  const root = hosted ? "~/killswitch" : (cfg as any).root ?? "/path/to/killswitch";
   const key = reveal ? c.key : `${c.key.slice(0, 6)}${"•".repeat(20)}${c.key.slice(-4)}`;
   const envPairs = [["KS_RELAY", relay], ["KS_ACCOUNT", c.account], ["KS_AGENT_ID", c.agentId], ["KS_SESSION_KEY", c.key]] as const;
   const snippets = {
@@ -872,6 +883,7 @@ function ConnectModal({ c, cfg, onClose }: { c: Created; cfg: Config; onClose: (
         <button className={tab === "desktop" ? "on" : ""} onClick={() => setTab("desktop")}><Icon name="monitor" size={15} /> Claude Desktop</button>
         <button className={tab === "sdk" ? "on" : ""} onClick={() => setTab("sdk")}><Icon name="code" size={15} /> SDK</button>
       </div>
+      {hosted && tab !== "sdk" && <p className="muted small">First, once: <code>git clone https://github.com/savor3/killswitch ~/killswitch &amp;&amp; cd ~/killswitch &amp;&amp; npm install</code></p>}
       <p className="muted small">{help[tab]}</p>
       <div className="code">
         <div className="code-h">

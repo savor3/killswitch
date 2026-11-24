@@ -1,9 +1,11 @@
 // Killswitch relay API: the single door for agents (SDK/MCP) and the owner dashboard.
 import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
+import { existsSync } from "node:fs";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
-import { isAddress, isHex, type Address, type Hex } from "viem";
+import { formatEther, isAddress, isHex, parseEther, type Address, type Hex } from "viem";
 import { KillswitchFactoryAbi } from "../../shared/abi.js";
 import { fmt, fromWire, json, tokenByAddress, type WireCall } from "../../shared/protocol.js";
 import * as chain from "./chain.js";
@@ -35,6 +37,24 @@ const id32 = (v: string) => {
 
 app.get("/health", (c) => send(c, { ok: true }));
 
+// Testnet only: give a new owner a little gas so they can create a wallet and sign grants without a faucet.
+const GAS_DRIP = dep.chainId === 84532 ? parseEther(process.env.KS_GAS_DRIP ?? "0.0005") : 0n;
+const dripped = new Map<string, number>();
+app.post("/v1/gas", async (c) => {
+  if (GAS_DRIP === 0n) throw new ClientError("gas drip is only available on testnet");
+  const body = await c.req.json().catch(() => ({}));
+  const to = addr(String(body.address ?? ""));
+  const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+  const day = 86_400_000, now = Date.now();
+  for (const k of [to.toLowerCase(), `ip:${ip}`]) if ((dripped.get(k) ?? 0) > now - day) throw new ClientError("already sent test gas in the last 24 hours");
+  const bal = await chain.pub.getBalance({ address: to });
+  if (bal >= GAS_DRIP) return send(c, { sent: false, balance: formatEther(bal) });
+  const hash = await chain.relayer.sendTransaction({ to, value: GAS_DRIP });
+  await chain.pub.waitForTransactionReceipt({ hash });
+  dripped.set(to.toLowerCase(), now); dripped.set(`ip:${ip}`, now);
+  return send(c, { sent: true, amount: formatEther(GAS_DRIP), txHash: hash });
+});
+
 app.get("/v1/config", (c) =>
   send(c, {
     chainId: dep.chainId,
@@ -45,7 +65,9 @@ app.get("/v1/config", (c) =>
     guardian: chain.guardianAccount.address,
     relayer: chain.relayer.account.address,
     llm: llmEnabled(),
-    root: process.cwd(),
+    root: process.env.KS_PUBLIC_ROOT ?? process.cwd(),
+    hosted: !!process.env.KS_PUBLIC_ROOT,
+    gasDrip: GAS_DRIP > 0n,
   }),
 );
 
@@ -159,6 +181,13 @@ app.get("/v1/stream", (c) => {
     }
   });
 });
+
+// Hosted mode: serve the built dashboard from the same origin.
+const staticDir = process.env.KS_STATIC ?? "dist/dashboard";
+if (existsSync(staticDir)) {
+  app.use("/*", serveStatic({ root: staticDir }));
+  app.get("*", serveStatic({ path: `${staticDir}/index.html` }));
+}
 
 const port = Number(process.env.KS_PORT ?? 8787);
 serve({ fetch: app.fetch, port }, () => {

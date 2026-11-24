@@ -6,6 +6,7 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 export default defineConfig({
   root,
   plugins: [react()],
+  build: { outDir: fileURLToPath(new URL("../../dist/dashboard", import.meta.url)), emptyOutDir: true },
   server: {
     port: 5175,
     strictPort: true,
