@@ -95,6 +95,7 @@ contract KillswitchAccount is EIP712 {
     error CosignRequired(address token, uint256 outflow, uint256 threshold);
     error BadGuardianSignature();
     error DanglingAllowance(address token, address spender);
+    error SpenderNotAllowed(address token, address spender);
     error CallFailed(uint256 index, bytes reason);
     error TooMany();
     error BadPeriod();
@@ -302,6 +303,14 @@ contract KillswitchAccount is EIP712 {
             if (c.target == address(this)) revert SelfCallForbidden();
             bytes4 sel = c.data.length >= 4 ? bytes4(c.data[:4]) : bytes4(0);
             if (!_allowed[agentId][c.target][sel]) revert CallNotAllowed(c.target, sel);
+            // approve / increaseAllowance / setApprovalForAll may only name a contract the agent is
+            // itself allowed to call: an allowance to an outside address could be spent later via
+            // transferFrom, outside this wallet, where no cap would see it.
+            if (sel == 0x095ea7b3 || sel == 0x39509351 || sel == 0xa22cb465) {
+                if (c.data.length < 36) revert CallNotAllowed(c.target, sel);
+                address spender = address(uint160(uint256(bytes32(c.data[4:36]))));
+                if (spender == c.target || !_isRuleTarget(agentId, spender)) revert SpenderNotAllowed(c.target, spender);
+            }
             if (c.value != 0 && _limitIndex(agentId, address(0)) == type(uint256).max) revert NativeValueNotAllowed();
         }
 
@@ -368,6 +377,12 @@ contract KillswitchAccount is EIP712 {
             delete _windows[agentId][limits[i].token];
         }
         delete _limits[agentId];
+    }
+
+    function _isRuleTarget(bytes32 agentId, address who) internal view returns (bool) {
+        CallRule[] storage rules = _rules[agentId];
+        for (uint256 r; r < rules.length; ++r) if (rules[r].target == who) return true;
+        return false;
     }
 
     function _limitIndex(bytes32 agentId, address token) internal view returns (uint256) {

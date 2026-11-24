@@ -140,6 +140,15 @@ contract KillswitchAccountTest is Test {
         this.execExternal(TRADER, c, false);
     }
 
+    function test_approveToOutsiderBlocked() public {
+        // an allowance to an address outside the agent's rules could be drained later via transferFrom
+        KillswitchAccount.Call[] memory c = new KillswitchAccount.Call[](1);
+        c[0] = KillswitchAccount.Call(address(usdc), 0, abi.encodeCall(usdc.approve, (attacker, type(uint256).max)));
+        vm.expectRevert(abi.encodeWithSelector(KillswitchAccount.SpenderNotAllowed.selector, address(usdc), attacker));
+        this.execExternal(TRADER, c, false);
+        assertEq(usdc.allowance(address(acct), attacker), 0);
+    }
+
     function test_cannotGrantUncappedTokenRule() public {
         KillswitchAccount.CallRule[] memory rules = new KillswitchAccount.CallRule[](1);
         rules[0] = KillswitchAccount.CallRule(address(weth), weth.transfer.selector);
