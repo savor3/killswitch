@@ -159,6 +159,15 @@ export function submitAgentOp(p: { account: Address; agentId: Hex; calls: Call[]
   });
 }
 
+// Testnet gas drip from the relayer: same queue as agent ops, so its nonce can't collide with theirs.
+export function sendGas(to: Address, value: bigint) {
+  return serial(async () => {
+    const hash = await relayer.sendTransaction({ to, value });
+    await pub.waitForTransactionReceipt({ hash });
+    return hash;
+  });
+}
+
 export function guardianPause(account: Address, agentId: Hex) {
   return serial(async () => {
     const hash = await guardianWallet.writeContract({ address: account, abi: KillswitchAccountAbi, functionName: "pause", args: [agentId] });

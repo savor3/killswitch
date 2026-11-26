@@ -44,15 +44,22 @@ app.post("/v1/gas", async (c) => {
   if (GAS_DRIP === 0n) throw new ClientError("gas drip is only available on testnet");
   const body = await c.req.json().catch(() => ({}));
   const to = addr(String(body.address ?? ""));
-  const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+  // X-Real-IP is set by our nginx and can't be faked by the client; X-Forwarded-For's first entry can.
+  const ip = c.req.header("x-real-ip")?.trim() || "local";
   const day = 86_400_000, now = Date.now();
-  for (const k of [to.toLowerCase(), `ip:${ip}`]) if ((dripped.get(k) ?? 0) > now - day) throw new ClientError("already sent test gas in the last 24 hours");
-  const bal = await chain.pub.getBalance({ address: to });
-  if (bal >= GAS_DRIP) return send(c, { sent: false, balance: formatEther(bal) });
-  const hash = await chain.relayer.sendTransaction({ to, value: GAS_DRIP });
-  await chain.pub.waitForTransactionReceipt({ hash });
-  dripped.set(to.toLowerCase(), now); dripped.set(`ip:${ip}`, now);
-  return send(c, { sent: true, amount: formatEther(GAS_DRIP), txHash: hash });
+  const keys = [to.toLowerCase(), `ip:${ip}`];
+  if (keys.some((k) => (dripped.get(k) ?? 0) > now - day)) throw new ClientError("already sent test gas in the last 24 hours");
+  // Reserve before any await, so two requests arriving together can't both pass the check.
+  for (const k of keys) dripped.set(k, now);
+  try {
+    const bal = await chain.pub.getBalance({ address: to });
+    if (bal >= GAS_DRIP) { for (const k of keys) dripped.delete(k); return send(c, { sent: false, balance: formatEther(bal) }); }
+    const hash = await chain.sendGas(to, GAS_DRIP);
+    return send(c, { sent: true, amount: formatEther(GAS_DRIP), txHash: hash });
+  } catch (e) {
+    for (const k of keys) dripped.delete(k); // failed: let them retry
+    throw e;
+  }
 });
 
 app.get("/v1/config", (c) =>
