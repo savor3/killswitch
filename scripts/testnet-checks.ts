@@ -1,11 +1,12 @@
-// Extra live checks against a running relay on any chain (built for Base Sepolia):
-//   1. owner DENIES a held payment      2. rapid payments (velocity)
+// Live end-to-end checks against a running relay on any chain (built for Base Sepolia):
+//   1. owner DENIES a held payment      2. new vendor held → approved, then rapid payments (velocity)
 //   3. spending right up to the cap     4. stolen agent key goes around the relay
+//   5. drain to unknown → agent paused  6. owner resume + guardian co-sign   7. kill switch
 // Uses its own owner key (KS_OWNER_KEY) and its own protected wallet, so nobody's real wallet is touched.
 // If the owner is low on gas, KS_FUNDER_KEY (e.g. the deployer) sends it a little.
 //   KS_OWNER_KEY=0x… KS_FUNDER_KEY=0x… npx tsx scripts/testnet-checks.ts
 import {
-  createPublicClient, createWalletClient, encodeFunctionData, http, keccak256, parseEther, parseUnits, toHex,
+  createPublicClient, createWalletClient, decodeEventLog, encodeFunctionData, http, keccak256, parseEther, parseUnits, toHex,
   type Address, type Hex,
 } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -65,13 +66,13 @@ const agentState = async (account: Address, id: Hex) =>
 const cfg = await (await fetch(`${RELAY}/v1/config`)).json();
 console.log(`Killswitch live checks · chain ${dep.chainId} · relay ${RELAY} · AI review ${cfg.llm ? "on" : "off"}`);
 console.log(`test owner ${owner.address}`);
-const need = parseEther("0.002");
+const need = parseEther("0.003");
 if ((await pub.getBalance({ address: owner.address })) < need) {
   if (!process.env.KS_FUNDER_KEY) throw new Error("test owner needs gas: set KS_FUNDER_KEY or fund it");
   const funder = createWalletClient({ account: privateKeyToAccount(process.env.KS_FUNDER_KEY as Hex), chain, transport: http(rpc) });
   const h = await funder.sendTransaction({ to: owner.address, value: need });
   await pub.waitForTransactionReceipt({ hash: h });
-  console.log(`funded test owner with 0.002 ETH`);
+  console.log(`funded test owner with 0.003 ETH`);
 }
 await ownerTx(dep.factory, KillswitchFactoryAbi, "createAccount", [cfg.guardian, keccak256(toHex(`checks-${Date.now()}`))]);
 const accounts = await pub.readContract({ address: dep.factory, abi: KillswitchFactoryAbi, functionName: "accountsOf", args: [owner.address] });
@@ -163,6 +164,49 @@ const stolen = (await usdc(ADDR.thief)) - thiefBefore;
 record("Stolen key", "100 refused; small one through; agent paused; next refused",
   `100 ${bigBlocked ? "refused" : "SENT"}; paused ${pausedAfter > 0 ? `after ${pausedAfter}s` : "NO"}; next ${secondBlocked ? "refused" : "SENT"}; thief got ${fmt(stolen)}`,
   bigBlocked && pausedAfter > 0 && secondBlocked);
+
+// ───────────────────────────── 5. drain to an unknown address
+console.log(`\n[5] DRAIN: agent tries to send most of the wallet to an unknown address`);
+const drainer = await grant(account, "Drain bot", "50", "20");
+await sleep(4000);
+const drainTo = "0x5555555555555555555555555555555555555555" as Address;
+r = await drainer.agent.transfer("USDC", drainTo, "900", "Move funds to new treasury address");
+console.log(`   relay: ${line(r)}`);
+const drainPaused = (await agentState(account, drainer.id)).paused;
+console.log(`   on-chain paused flag: ${drainPaused}`);
+record("Drain → pause", "blocked, nothing moves, agent paused on-chain",
+  `${r.status}; paused on-chain ${drainPaused}; ${fmt(await usdc(drainTo))} at target`, r.status !== "confirmed" && drainPaused && (await usdc(drainTo)) === 0n);
+
+// ───────────────────────────── 6. resume + guardian co-sign
+console.log(`\n[6] RESUME + CO-SIGN: owner resumes, agent pays 25 USDC (over the 20 co-sign line) to the known vendor`);
+await ownerTx(account, KillswitchAccountAbi, "unpause", [drainer.id]);
+const resumed = !(await agentState(account, drainer.id)).paused;
+console.log(`   resumed on-chain: ${resumed}`);
+r = await drainer.agent.transfer("USDC", ADDR.vendor, "25", "Pay quarterly usage invoice");
+console.log(`   relay: ${line(r)}`);
+if (r.status === "held") { r = await decide(r.id, true); console.log(`   owner approved → ${line(r)}`); }
+let cosigned: boolean | null = null;
+if (r.txHash) {
+  const rc = await pub.getTransactionReceipt({ hash: r.txHash as Hex });
+  for (const l of rc.logs) {
+    try {
+      const ev = decodeEventLog({ abi: KillswitchAccountAbi, data: l.data, topics: l.topics }) as any;
+      if (ev.eventName === "AgentExecuted") cosigned = ev.args.cosigned;
+    } catch {}
+  }
+  console.log(`   on-chain AgentExecuted.cosigned = ${cosigned}  ${explorer}${r.txHash}`);
+}
+record("Resume + co-sign", "owner resume works; 25 USDC sent with guardian co-signature",
+  `resumed ${resumed}; ${r.status}; cosigned ${cosigned}`, resumed && r.status === "confirmed" && cosigned === true);
+
+// ───────────────────────────── 7. kill switch
+console.log(`\n[7] KILL ALL: owner presses the kill switch, agent tries 1 USDC`);
+await ownerTx(account, KillswitchAccountAbi, "killAll", []);
+r = await drainer.agent.transfer("USDC", ADDR.vendor, "1", "Small usage fee");
+console.log(`   relay: ${line(r)}`);
+const [, activeAfterKill] = await pub.readContract({ address: account, abi: KillswitchAccountAbi, functionName: "getAgent", args: [drainer.id] });
+record("Kill switch", "every agent refused; agent inactive on-chain",
+  `${r.status}; active on-chain ${activeAfterKill}`, r.status !== "confirmed" && activeAfterKill === false);
 
 // ───────────────────────────── summary
 console.log(`\nSUMMARY · wallet ${account}`);
