@@ -3,7 +3,7 @@ import { keccak256, parseUnits, toHex, type Address, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { KillswitchAccountAbi, KillswitchFactoryAbi, MockDEXAbi, MockERC20Abi } from "../../../shared/abi";
 import {
-  ago, api, browserOwner, chainOf, devOwner, publicClient, short,
+  ago, api, browserOwner, chainOf, devOwner, publicClient, short, walletProvider,
   type AccountInfo, type Agent, type Config, type Op, type Owner,
 } from "./lib";
 import {
@@ -72,6 +72,19 @@ export function App() {
     if (pref === "browser") browserOwner(cfg).then(setOwner).catch(() => {});
     else if (pref === "dev" || cfg.chainId === 31337) setOwner(devOwner(cfg));
   }, [cfg]);
+  // Follow MetaMask when the user switches account or network.
+  useEffect(() => {
+    const eth = walletProvider()?.provider as any;
+    if (!cfg || !eth?.on || owner?.kind !== "browser") return;
+    const onAccounts = (accs: string[]) => {
+      if (!accs.length) { ls.set("ks.wallet", ""); setOwner(null); return; }
+      if (accs[0].toLowerCase() !== owner.address.toLowerCase()) browserOwner(cfg).then(setOwner).catch(() => {});
+    };
+    const onChain = (id: string) => { if (parseInt(id, 16) !== cfg.chainId) toast("warn", `MetaMask left ${chainOf(cfg).name}. It will switch back when you sign.`); };
+    eth.on("accountsChanged", onAccounts);
+    eth.on("chainChanged", onChain);
+    return () => { eth.removeListener?.("accountsChanged", onAccounts); eth.removeListener?.("chainChanged", onChain); };
+  }, [cfg, owner, toast]);
   // Testnet: top up a fresh MetaMask owner with a little gas so they can sign without a faucet.
   useEffect(() => {
     if (!cfg || !pub || !owner || owner.kind !== "browser" || !(cfg as any).gasDrip) return;
@@ -135,14 +148,28 @@ export function App() {
       await refresh();
       return true;
     } catch (e) {
-      toast("warn", `${label} failed: ${(e as Error).message.split("\n")[0]}`);
+      console.error(label, e);
+      const err = e as any;
+      const detail = [err.shortMessage ?? err.message?.split("\n")[0], err.details].filter((x: string, i: number, a: string[]) => x && a.indexOf(x) === i).join(" | ");
+      toast("warn", `${label} failed: ${detail}`);
       return false;
     } finally {
       setBusy(null);
     }
   }
-  const write = (address: Address, abi: any, functionName: string, args: unknown[]) =>
-    owner!.wallet.writeContract({ address, abi, functionName, args, account: owner!.wallet.account!, chain: chainOf(cfg!) } as any);
+  const write = async (address: Address, abi: any, functionName: string, args: unknown[]) => {
+    let o = owner!;
+    if (o.kind === "browser") {
+      // MetaMask only signs for the account it has connected to this site, on the right chain. Re-check right before signing.
+      const fresh = await browserOwner(cfg!);
+      if (fresh.address.toLowerCase() !== o.address.toLowerCase()) {
+        setOwner(fresh);
+        throw new Error(`MetaMask is now on ${short(fresh.address)}. Switched to it; please try again.`);
+      }
+      o = fresh;
+    }
+    return o.wallet.writeContract({ address, abi, functionName, args, account: o.wallet.account!, chain: chainOf(cfg!) } as any);
+  };
 
   const connectDev = () => { ls.set("ks.wallet", "dev"); setOwner(devOwner(cfg!)); };
   const connectBrowser = () =>
@@ -864,14 +891,37 @@ function ConnectModal({ c, cfg, onClose }: { c: Created; cfg: Config; onClose: (
   const root = hosted ? "~/killswitch" : (cfg as any).root ?? "/path/to/killswitch";
   const key = reveal ? c.key : `${c.key.slice(0, 6)}${"•".repeat(20)}${c.key.slice(-4)}`;
   const envPairs = [["KS_RELAY", relay], ["KS_ACCOUNT", c.account], ["KS_AGENT_ID", c.agentId], ["KS_SESSION_KEY", c.key]] as const;
+  // Relay running inside WSL (repo under /mnt/<drive>/): Claude on Windows starts the MCP server through wsl.exe.
+  const viaWsl = !hosted && root.startsWith("/mnt/");
+  // Hosted: the visitor runs the MCP server from their own clone. Windows PowerShell 5 has no `&&` and no `~` for exe args.
+  const isWin = /Windows/i.test(navigator.userAgent);
+  const hostDir = isWin ? "$HOME\\killswitch" : "~/killswitch";
+  const hostEntry = isWin ? `${hostDir}\\dist\\mcp\\server.mjs` : `${hostDir}/dist/mcp/server.mjs`;
+  const setup = isWin
+    ? `git clone https://github.com/savor3/killswitch ${hostDir}; cd ${hostDir}; npm install; npm run mcp:build`
+    : `git clone https://github.com/savor3/killswitch ${hostDir} && cd ${hostDir} && npm install && npm run mcp:build`;
+  const envFlags = (k: string) => envPairs.map(([n, v]) => `-e ${n}=${n === "KS_SESSION_KEY" ? k : v}`).join(" ");
+  const wslArgs = (k: string) => ["-e", "env", ...envPairs.map(([n, v]) => `${n}=${n === "KS_SESSION_KEY" ? k : v}`),
+    // Run a prebuilt single-file bundle: `npx tsx` over /mnt/c takes ~30 s to start, past Claude's MCP connect timeout.
+    "bash", "-c", `. ~/.nvm/nvm.sh && cd ${root} && { [ -f dist/mcp/server.mjs ] || npm run -s mcp:build >&2; } && exec node dist/mcp/server.mjs`];
   const snippets = {
-    code: (k: string) => `claude mcp add killswitch-wallet \\\n${envPairs.map(([n, v]) => `  -e ${n}=${n === "KS_SESSION_KEY" ? k : v} \\`).join("\n")}\n  -- npx --prefix ${root} tsx ${root}/packages/mcp/server.ts`,
-    desktop: (k: string) => JSON.stringify({ mcpServers: { "killswitch-wallet": { command: "npx", args: ["--prefix", root, "tsx", `${root}/packages/mcp/server.ts`], env: Object.fromEntries(envPairs.map(([n, v]) => [n, n === "KS_SESSION_KEY" ? k : v])) } } }, null, 2),
+    code: (k: string) => viaWsl
+      ? `claude mcp add killswitch-wallet -- wsl ${wslArgs(k).map((a) => (/\s/.test(a) ? `"${a}"` : a)).join(" ")}`
+      : hosted
+      ? `claude mcp add killswitch-wallet ${envFlags(k)} -- node ${hostEntry}`
+      : `claude mcp add killswitch-wallet \\\n${envPairs.map(([n, v]) => `  -e ${n}=${n === "KS_SESSION_KEY" ? k : v} \\`).join("\n")}\n  -- npx --prefix ${root} tsx ${root}/packages/mcp/server.ts`,
+    desktop: (k: string) => JSON.stringify({ mcpServers: { "killswitch-wallet": viaWsl
+      ? { command: "wsl", args: wslArgs(k) }
+      : hosted
+      ? { command: "node", args: [isWin ? "C:\\Users\\<you>\\killswitch\\dist\\mcp\\server.mjs" : "/Users/<you>/killswitch/dist/mcp/server.mjs"], env: Object.fromEntries(envPairs.map(([n, v]) => [n, n === "KS_SESSION_KEY" ? k : v])) }
+      : { command: "npx", args: ["--prefix", root, "tsx", `${root}/packages/mcp/server.ts`], env: Object.fromEntries(envPairs.map(([n, v]) => [n, n === "KS_SESSION_KEY" ? k : v])) } } }, null, 2),
     sdk: (k: string) => envPairs.map(([n, v]) => `${n}=${n === "KS_SESSION_KEY" ? k : v}`).join("\n"),
   };
   const help = {
     code: "Run this in your terminal. Then ask Claude: “check my wallet” or “swap 10 USDC to ETH”.",
-    desktop: "Paste into Claude Desktop → Settings → Developer → Edit config, then restart Claude.",
+    desktop: hosted
+      ? "Paste into Claude Desktop → Settings → Developer → Edit config (replace <you> with your user folder), then restart Claude."
+      : "Paste into Claude Desktop → Settings → Developer → Edit config, then restart Claude.",
     sdk: "Put these in your agent's environment and use createKillswitchAgent() from packages/sdk.",
   };
   const copy = () => { navigator.clipboard.writeText(snippets[tab](c.key)); setCopied(tab); setTimeout(() => setCopied(""), 1500); };
@@ -883,7 +933,7 @@ function ConnectModal({ c, cfg, onClose }: { c: Created; cfg: Config; onClose: (
         <button className={tab === "desktop" ? "on" : ""} onClick={() => setTab("desktop")}><Icon name="monitor" size={15} /> Claude Desktop</button>
         <button className={tab === "sdk" ? "on" : ""} onClick={() => setTab("sdk")}><Icon name="code" size={15} /> SDK</button>
       </div>
-      {hosted && tab !== "sdk" && <p className="muted small">First, once: <code>git clone https://github.com/savor3/killswitch ~/killswitch &amp;&amp; cd ~/killswitch &amp;&amp; npm install</code></p>}
+      {hosted && tab !== "sdk" && <p className="muted small">First, once{isWin ? " (in PowerShell)" : ""}: <code>{setup}</code></p>}
       <p className="muted small">{help[tab]}</p>
       <div className="code">
         <div className="code-h">

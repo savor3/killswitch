@@ -1,0 +1,19 @@
+{
+  "chainId": 84532,
+  "rpc": "https://sepolia.base.org",
+  "factory": "0xab03859ca89ac604006309ad734150fdd8968ade",
+  "dex": "0x540e19554b06fc4dd83007cf742ec57b1a131824",
+  "tokens": {
+    "USDC": {
+      "symbol": "USDC",
+      "address": "0xaa7909e6297040c5cf5044cf77667fedff6a4626",
+      "decimals": 6
+    },
+    "WETH": {
+      "symbol": "WETH",
+      "address": "0x213b456e54d353b2ed614f61e2d7a35758c43623",
+      "decimals": 18
+    }
+  },
+  "deployedAt": 63789548
+}

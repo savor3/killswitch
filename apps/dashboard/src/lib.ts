@@ -65,21 +65,56 @@ export function devOwner(cfg: Config): Owner {
   return { kind: "dev", address: account.address, wallet: createWalletClient({ account, chain: chainOf(cfg), transport: http(cfg.rpc) }) };
 }
 
+// Pick the wallet via EIP-6963 so another extension (Phantom, Coinbase, Rabby…) that grabbed window.ethereum
+// can't stand in for MetaMask. Every request is tagged with its method so errors say which step failed.
+type Provider = { request: (a: { method: string; params?: unknown }) => Promise<any>; on?: Function; removeListener?: Function };
+let picked: { provider: Provider; name: string } | null = null;
+export const walletProvider = () => picked;
+async function pickProvider(): Promise<{ provider: Provider; name: string }> {
+  if (picked) return picked;
+  const found: { info: { name: string; rdns: string }; provider: Provider }[] = [];
+  const onAnnounce = (e: any) => found.push(e.detail);
+  window.addEventListener("eip6963:announceProvider", onAnnounce);
+  window.dispatchEvent(new Event("eip6963:requestProvider"));
+  await new Promise((r) => setTimeout(r, 300));
+  window.removeEventListener("eip6963:announceProvider", onAnnounce);
+  const mm = found.find((f) => f.info.rdns === "io.metamask") ?? found.find((f) => /metamask/i.test(f.info.name));
+  const chosen = mm ?? found[0];
+  const raw: Provider | undefined = chosen?.provider ?? (window as any).ethereum;
+  if (!raw) throw new Error("No browser wallet found. Install MetaMask or use the dev wallet.");
+  const name = chosen?.info.name ?? ((window as any).ethereum?.isMetaMask ? "MetaMask (legacy)" : "unknown wallet");
+  const provider: Provider = {
+    request: async (args) => {
+      try { return await raw.request(args); }
+      catch (err: any) { err.message = `${name} → ${args.method}: ${err?.message ?? err}`; throw err; }
+    },
+    on: raw.on?.bind(raw),
+    removeListener: raw.removeListener?.bind(raw),
+  };
+  picked = { provider, name };
+  return picked;
+}
+
 export async function browserOwner(cfg: Config): Promise<Owner> {
-  const eth = (window as any).ethereum;
-  if (!eth) throw new Error("No browser wallet found. Install MetaMask or use the dev wallet.");
+  const { provider: eth } = await pickProvider();
   const [address] = (await eth.request({ method: "eth_requestAccounts" })) as Address[];
+  if (!address) throw new Error("The wallet returned no account. Unlock it and connect this site.");
   const hexId = "0x" + cfg.chainId.toString(16);
-  try {
-    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hexId }] });
-  } catch {
-    const c = chainOf(cfg);
-    await eth.request({
-      method: "wallet_addEthereumChain",
-      params: [{ chainId: hexId, chainName: c.name, rpcUrls: [cfg.rpc], nativeCurrency: c.nativeCurrency }],
-    });
+  const c = chainOf(cfg);
+  if (parseInt(await eth.request({ method: "eth_chainId" }), 16) !== cfg.chainId) {
+    try {
+      await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hexId }] });
+    } catch (err: any) {
+      if (err?.code !== 4902 && !/unrecognized|not added|4902/i.test(String(err?.message))) throw err;
+      await eth.request({
+        method: "wallet_addEthereumChain",
+        params: [{ chainId: hexId, chainName: c.name, rpcUrls: [cfg.rpc], nativeCurrency: c.nativeCurrency }],
+      });
+    }
+    const now = parseInt(await eth.request({ method: "eth_chainId" }), 16);
+    if (now !== cfg.chainId) throw new Error(`Your wallet is on chain ${now}; switch it to ${c.name} (${cfg.chainId}) and try again.`);
   }
-  return { kind: "browser", address, wallet: createWalletClient({ account: address, chain: chainOf(cfg), transport: custom(eth) }) };
+  return { kind: "browser", address, wallet: createWalletClient({ account: address, chain: c, transport: custom(eth as any) }) };
 }
 
 export const short = (a?: string) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");

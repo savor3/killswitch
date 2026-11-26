@@ -11,9 +11,10 @@ const rpc = process.env.KS_RPC ?? "http://127.0.0.1:8545";
 const key = (process.env.KS_DEPLOYER_KEY ?? ANVIL_KEYS.owner) as Hex;
 const bytecode = JSON.parse(readFileSync("shared/bytecode.json", "utf8")) as Record<string, Hex>;
 
-const account = privateKeyToAccount(key);
 const pub = createPublicClient({ transport: http(rpc) });
 const chainId = await pub.getChainId();
+if (chainId !== 31337 && !process.env.KS_DEPLOYER_KEY) throw new Error(`KS_DEPLOYER_KEY is required on chain ${chainId} (the Anvil dev key is public)`);
+const account = privateKeyToAccount(key);
 const chain = { id: chainId, name: `chain-${chainId}`, nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 }, rpcUrls: { default: { http: [rpc] } } };
 const wallet = createWalletClient({ account, chain, transport: http(rpc) });
 

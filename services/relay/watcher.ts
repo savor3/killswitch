@@ -19,7 +19,9 @@ export async function startWatcher() {
   const tick = async () => {
     const head = await pub.getBlockNumber();
     if (head < from) return;
-    const to = head - from > 2000n ? from + 2000n : head;
+    // Public RPCs cap eth_getLogs ranges (sepolia.base.org: 200 blocks, inclusive), so scan in small steps there.
+    const span = BigInt(process.env.KS_LOG_RANGE ?? (dep.chainId === 31337 ? 2000 : 150));
+    const to = head - from >= span ? from + span - 1n : head;
 
     // 1. new accounts
     const created = await pub.getLogs({ address: dep.factory, event: ACCOUNT_CREATED, fromBlock: from, toBlock: to });
@@ -79,12 +81,14 @@ export async function startWatcher() {
   };
 
   const loop = async () => {
+    let behind = false;
     try {
       await tick();
+      behind = (await pub.getBlockNumber()) > from + 5n; // still catching up: go again right away
     } catch (e) {
-      console.error("[watcher]", (e as Error).message);
+      console.error("[watcher]", (e as Error).message.split("\n")[0]);
     }
-    setTimeout(loop, 1000);
+    setTimeout(loop, behind ? 50 : 1000);
   };
   loop();
 }

@@ -190,7 +190,8 @@ if (existsSync(staticDir)) {
 }
 
 const port = Number(process.env.KS_PORT ?? 8787);
-serve({ fetch: app.fetch, port }, () => {
-  console.log(`Killswitch relay on http://localhost:${port}  chain=${dep.chainId}  guardian=${chain.guardianAccount.address}  AI review=${llmEnabled() ? "on" : "off"}`);
+const hostname = process.env.KS_HOST; // e.g. 127.0.0.1 on a server, so only the local reverse proxy can reach it
+serve({ fetch: app.fetch, port, ...(hostname ? { hostname } : {}) }, () => {
+  console.log(`Killswitch relay on http://${hostname ?? "localhost"}:${port}  chain=${dep.chainId}  guardian=${chain.guardianAccount.address}  AI review=${llmEnabled() ? "on" : "off"}`);
 });
 startWatcher();

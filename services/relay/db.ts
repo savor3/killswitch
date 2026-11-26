@@ -1,9 +1,11 @@
 // SQLite storage (node:sqlite, built into Node 22). One file: data/killswitch.db
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 
-mkdirSync("data", { recursive: true });
-export const db = new DatabaseSync(process.env.KS_DB ?? "data/killswitch.db");
+const dbPath = process.env.KS_DB ?? "data/killswitch.db";
+mkdirSync(dirname(dbPath), { recursive: true }); // create the folder the DB actually lives in (KS_DB may point outside the code)
+export const db = new DatabaseSync(dbPath);
 
 db.exec(`
 PRAGMA journal_mode = WAL;
