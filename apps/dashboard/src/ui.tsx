@@ -35,21 +35,18 @@ const P: Record<string, ReactNode> = {
   terminal: <><path d="m4 17 6-5-6-5" /><path d="M12 19h8" /></>,
   code: <><path d="m16 18 6-6-6-6" /><path d="m8 6-6 6 6 6" /></>,
   monitor: <><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></>,
+  bell: <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></>,
+  search: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>,
+  external: <><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></>,
+  download: <><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></>,
+  up: <><path d="M12 19V5" /><path d="m5 12 7-7 7 7" /></>,
+  key: <><circle cx="7.5" cy="15.5" r="4.5" /><path d="m10.7 12.3 9.8-9.8" /><path d="m17 6 3 3" /><path d="m14.5 8.5 2 2" /></>,
 };
 
 export function Icon({ name, size = 18, className = "" }: { name: string; size?: number; className?: string }) {
   return (
-    <svg className={`ic ${className}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg className={`ic ${className}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
       {P[name] ?? P.alert}
-    </svg>
-  );
-}
-
-export function Logo({ size = 24 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 26 26" aria-hidden="true">
-      <circle cx="13" cy="14" r="9.5" fill="none" stroke="var(--accent)" strokeWidth="2.6" strokeDasharray="46 14" transform="rotate(-62 13 14)" />
-      <line x1="13" y1="2.5" x2="13" y2="13" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -174,6 +171,65 @@ export function buildGrant(cfg: Config, t: TemplateId, cap: string, cosign: stri
     rules = [{ target: T.USDC.address, selector: TRANSFER }];
   }
   return { rules, limits };
+}
+
+// ---------- state, as the one square and its word
+type ToneT = "ok" | "bad" | "hold" | "wait" | "off";
+
+/** What happened to an operation, in a word, and its square. */
+export function opState(op: Op): [string, ToneT] {
+  if (op.source === "bypass") return op.verdict === "reject" ? ["Bypass · agent paused", "bad"] : ["Outside Killswitch", "hold"];
+  switch (op.status) {
+    case "confirmed": return ["Done", "ok"];
+    case "held": return ["Needs you", "wait"];
+    case "blocked": return ["Blocked", "bad"];
+    case "rejected": return ["Stopped · agent paused", "bad"];
+    case "failed": return ["Not sent", "bad"];
+    case "denied": return ["Denied by you", "off"];
+    case "pending": return ["Checking", "wait"];
+    default: return [op.status, "off"];
+  }
+}
+
+/** Where an agent stands, in a word, and its square. */
+export function agentState(a: Agent): [string, ToneT] {
+  if (!a.exists) return ["Removed", "off"];
+  if (a.killed) return ["Stopped", "bad"];
+  if (a.paused) return ["Paused", "hold"];
+  if (a.expired) return ["Expired", "off"];
+  return ["Active", "ok"];
+}
+
+/** The chain's block explorer page for a transaction, where there is one. */
+export function explorerTx(cfg: Config, hash: string) {
+  if (cfg.chainId === 84532) return `https://sepolia.basescan.org/tx/${hash}`;
+  if (cfg.chainId === 8453) return `https://basescan.org/tx/${hash}`;
+  return null;
+}
+
+export const dayKey = (t: number) => new Date(t * 1000).toDateString();
+export function dayLabel(t: number) {
+  const d = new Date(t * 1000);
+  const today = new Date();
+  const y = new Date(today);
+  y.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === y.toDateString()) return "Yesterday";
+  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: d.getFullYear() === today.getFullYear() ? undefined : "numeric" });
+}
+export const clock = (t: number) => new Date(t * 1000).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+export const when = (t: number) =>
+  new Date(t * 1000).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+/** The history as a spreadsheet file. */
+export function opsCsv(cfg: Config, ops: Op[]) {
+  const q = (v: unknown) => `"${String(v ?? "").replaceAll('"', '""')}"`;
+  const head = ["time", "agent", "action", "state", "agent said", "guardian reasons", "transaction", "error", "source", "id"];
+  const rows = ops.map((o) => [
+    new Date(o.created_at * 1000).toISOString(), o.label, humanSummary(cfg, o.summary), opState(o)[0], o.intent ?? "",
+    o.reasons.join("; "), o.tx_hash ?? "", o.error ?? "", o.source, o.id,
+  ]);
+  return [head, ...rows].map((r) => r.map(q).join(",")).join("\n");
 }
 
 export const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;

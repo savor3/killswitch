@@ -1,0 +1,666 @@
+/* The frame around every page: a white side rail (logo, wallet, sections, connection), a top bar with the
+   page's name and the bell, and on phones a bar of four tabs along the bottom. */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  color: var(--fg);
+  text-decoration: none;
+}
+.logo .mark {
+  display: block;
+  height: 1.12em;
+  fill: currentColor;
+}
+.logo .wordmark {
+  display: block;
+  height: 0.74em;
+  fill: currentColor;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: var(--side-w) minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+/* ------------------------------------------------------------------ side rail */
+.side {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding: 22px 14px 14px;
+  border-right: 1px solid var(--card-line);
+  background: var(--page);
+}
+.side > .logo {
+  align-self: flex-start;
+  margin: 6px 12px 26px;
+  font-size: 17px;
+}
+
+/* the wallet this page is about; a menu lists the others */
+.wsw {
+  position: relative;
+  margin-bottom: 22px;
+}
+.wsw-btn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: var(--r);
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--tile-line);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--t-hover) var(--ease-out);
+}
+.wsw-btn:hover,
+.wsw-btn[aria-expanded="true"] {
+  background: var(--tile-hover);
+}
+.wsw-t {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.wsw-t .lbl {
+  font-size: 10.5px;
+}
+.wsw-t b {
+  overflow: hidden;
+  font: 500 13px/1.1 var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wsw-r {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--faint);
+}
+.wsw-n {
+  font: 500 11px/1 var(--mono);
+  color: var(--muted);
+}
+.wsw-r .ic {
+  transition: transform var(--t-state) var(--ease-out);
+}
+.wsw-btn[aria-expanded="true"] .wsw-r .ic {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  padding: 6px;
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transform-origin: top center;
+  animation: menu-in 220ms var(--ease-out);
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0) scale(0.98);
+  }
+}
+.menu-i {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: 500 12.5px/1 var(--mono);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--t-hover) var(--ease-out);
+}
+.menu-i:hover {
+  background: var(--hover);
+}
+.menu-i:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.menu-i .sq {
+  visibility: hidden;
+}
+.menu-i.on .sq {
+  visibility: visible;
+}
+.menu-i .k {
+  margin-left: auto;
+  color: var(--faint);
+}
+.menu-i.add {
+  font: 500 13.5px/1 var(--sans);
+  color: var(--muted);
+}
+.menu-i.add:hover {
+  color: var(--fg);
+}
+.menu-sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--line);
+}
+
+/* the sections: the one you are on carries a red square, as on the landing's bar */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-i {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 10px 0 30px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: 500 14px/1 var(--sans);
+  letter-spacing: -0.01em;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--t-hover) var(--ease-out),
+    color var(--t-hover) var(--ease-out);
+}
+.nav-i::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  background: var(--red);
+  transform: scale(0);
+  transition: transform 320ms var(--ease-out);
+}
+.nav-i:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+.nav-i.on {
+  background: var(--nav-on);
+  box-shadow: inset 0 0 0 1px var(--tile-line);
+  color: var(--fg);
+}
+.nav-i.on::before {
+  transform: none;
+}
+.count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 6px;
+  background: var(--red);
+  color: #fff;
+  font: 600 11px/1 var(--mono);
+  animation: count-in 420ms var(--ease-out);
+}
+@keyframes count-in {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* where this app is connected, and who signs: one small card */
+.side-foot {
+  margin-top: auto;
+}
+.conn {
+  display: grid;
+  gap: 10px;
+  padding: 12px 12px 13px;
+  border-radius: var(--r);
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--tile-line);
+}
+.conn-r {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.conn-r .k {
+  font: 500 10.5px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.conn-r b {
+  overflow: hidden;
+  font: 500 12.5px/1 var(--mono);
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------------ main + top bar */
+.main {
+  min-width: 0;
+  padding: 0 clamp(20px, 3.2vw, 48px) 96px;
+}
+.main-in {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+/* the bar keeps to the page; a line under it shows only once the page has scrolled */
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 76px;
+  margin-bottom: 12px;
+  background: var(--page);
+  box-shadow: 0 1px 0 transparent;
+  transition: box-shadow var(--t-state) var(--ease-out);
+}
+.top[data-scrolled] {
+  box-shadow: 0 1px 0 var(--line);
+}
+.top h1 {
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.038em;
+}
+.top-r {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.top .m-logo {
+  display: none;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--tile-line);
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.top .chip.net,
+.m-wallet {
+  display: none;
+}
+/* the phone's wallet chip: the live square, the wallet, and the same menu under it on the right */
+.wsw.compact {
+  margin: 0;
+}
+.wsw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 38px;
+  padding: 0 10px 0 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--tile-line);
+  color: var(--fg);
+  cursor: pointer;
+}
+.wsw-chip b {
+  font: 500 12.5px/1 var(--mono);
+}
+.wsw-chip .ic {
+  color: var(--faint);
+  transition: transform var(--t-state) var(--ease-out);
+}
+.wsw-chip[aria-expanded="true"] .ic {
+  transform: rotate(180deg);
+}
+.wsw.compact .menu {
+  left: auto;
+  right: 0;
+  width: min(280px, calc(100vw - 24px));
+}
+
+/* the bell: a quiet square button; a count of unread alerts in red at its corner */
+.bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--tile-line);
+  color: var(--fg);
+  cursor: pointer;
+  transition: background-color var(--t-hover) var(--ease-out);
+}
+.bell:hover,
+.bell[aria-expanded="true"] {
+  background: var(--tile-hover);
+}
+.bell .count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 10.5px;
+}
+.bell.ring .ic {
+  animation: ring 900ms var(--ease-out);
+  transform-origin: 50% 10%;
+}
+@keyframes ring {
+  15% {
+    transform: rotate(14deg);
+  }
+  35% {
+    transform: rotate(-11deg);
+  }
+  55% {
+    transform: rotate(7deg);
+  }
+  75% {
+    transform: rotate(-3deg);
+  }
+}
+
+/* ------------------------------------------------------------------ notifications */
+.notes {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  width: min(400px, calc(100vw - 24px));
+  max-height: min(560px, calc(100dvh - 110px));
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transform-origin: top right;
+  animation: menu-in 220ms var(--ease-out);
+}
+.notes-h {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 10px;
+}
+.notes-h h2 {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 8px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.note-i {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 6px;
+  width: 100%;
+  padding: 12px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--t-hover) var(--ease-out);
+}
+.note-i:hover {
+  background: var(--hover);
+}
+.note-i .sq {
+  margin-top: 5px;
+}
+.note-i p {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.note-i.unread p {
+  color: var(--fg);
+}
+.note-i .lbl {
+  grid-column: 2;
+  font-size: 10.5px;
+}
+.note-i .new {
+  color: var(--red-text);
+}
+.notes-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 28px 40px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ the rail in the landing's black */
+/* on the hero's LED grid; in its empty middle a few red pieces fall and stack (Blocks in shell.tsx) */
+.side {
+  border-right-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+  isolation: isolate;
+}
+.side::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, var(--ink) 1px, transparent 1px) 0 0 / 7px 7px,
+    linear-gradient(var(--ink) 1px, transparent 1px) 0 0 / 7px 7px,
+    radial-gradient(120% 36% at 0% 100%, rgba(255, 32, 40, 0.16), rgba(255, 32, 40, 0) 70%),
+    rgb(14, 11, 11);
+}
+.side > :not(.blocks) {
+  position: relative;
+  z-index: 1;
+}
+/* the wallet's menu opens over the sections below it */
+.side > .wsw {
+  z-index: 3;
+}
+.blocks {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.side .logo {
+  color: var(--on-ink);
+}
+.side .lbl,
+.conn-r .k,
+.wsw-n {
+  color: var(--on-ink-muted);
+}
+.wsw-btn,
+.conn {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: none;
+}
+.wsw-btn:hover,
+.wsw-btn[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.12);
+}
+.wsw-r {
+  color: var(--on-ink-faint);
+}
+.nav-i {
+  color: var(--on-ink-muted);
+}
+.nav-i:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--on-ink);
+}
+.nav-i.on {
+  background: rgba(255, 255, 255, 0.11);
+  box-shadow: none;
+  color: var(--on-ink);
+}
+.side .st {
+  color: var(--on-ink);
+}
+.side .sq.ok {
+  background: var(--on-ink);
+}
+.side .menu {
+  color: var(--fg);
+}
+.side .menu .lbl {
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ the page itself */
+.page {
+  animation: rise 360ms var(--ease) both;
+}
+
+/* ------------------------------------------------------------------ phone tabs */
+.tabs {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .side {
+    display: none;
+  }
+  .main {
+    padding: 0 16px 104px;
+  }
+  .top {
+    height: 60px;
+    margin: 0 -16px 14px;
+    padding: 0 16px;
+  }
+  .top h1 {
+    display: none;
+  }
+  .top .m-logo {
+    display: inline-flex;
+    font-size: 16px;
+  }
+  .m-wallet {
+    display: block;
+  }
+  .page-h {
+    display: block !important;
+  }
+  .tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: flex;
+    padding: 0 6px env(safe-area-inset-bottom);
+    background: var(--page);
+    box-shadow: 0 -1px 0 var(--card-line);
+  }
+  .tab {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 62px;
+    border: 0;
+    background: transparent;
+    font: 500 11px/1 var(--sans);
+    color: var(--faint);
+    cursor: pointer;
+    transition: color var(--t-hover) var(--ease-out);
+  }
+  .tab::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    background: var(--red);
+    transform: scale(0);
+    transition: transform 320ms var(--ease-out);
+  }
+  .tab.on {
+    color: var(--fg);
+  }
+  .tab.on::before {
+    transform: none;
+  }
+  .tab .count {
+    position: absolute;
+    top: 8px;
+    left: calc(50% + 6px);
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    margin: 0;
+    font-size: 10px;
+  }
+  .notes {
+    position: fixed;
+    top: 64px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+}

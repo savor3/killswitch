@@ -36,6 +36,7 @@ export type Op = {
   id: string; account: string; agent_id: string; label: string; source: string; status: string; verdict: string | null; score: number;
   reasons: string[]; summary: string; intent: string | null; tx_hash: string | null; error: string | null; cosigned: number;
   llm: { verdict: string; confidence: number; reasons: string[]; model: string; ms: number } | null; created_at: number;
+  nonce?: number; deadline?: number; updated_at?: number;
 };
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
