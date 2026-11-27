@@ -8,6 +8,8 @@
     "deploy": "tsx scripts/deploy.ts",
     "relay": "tsx services/relay/index.ts",
     "dashboard": "vite --config apps/dashboard/vite.config.ts",
+    "landing": "vite --config apps/landing/vite.config.ts",
+    "landing:build": "vite build --config apps/landing/vite.config.ts",
     "mcp": "tsx packages/mcp/server.ts",
     "mcp:build": "esbuild packages/mcp/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/mcp/server.mjs --log-level=warning \"--banner:js=import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
     "demo": "tsx scripts/demo.ts",

@@ -1,0 +1,211 @@
+/* ------------------------------------------------------------------ footer */
+/* after the reference's: a "get started" block over a field of dots, the links on a four-column grid of
+   hairlines, and the wordmark across the full width, cut by the bottom edge and rising out of it */
+.ftr {
+  position: relative;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #050505;
+  color: var(--white);
+  overflow: hidden;
+}
+/* the hairlines between the four columns run the full height of the footer */
+.ftr-lines {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  pointer-events: none;
+}
+.ftr-lines i {
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* get started */
+.ftr-go {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: clamp(540px, 38vw, 720px);
+  padding: clamp(80px, 7vw, 130px) 0;
+}
+.dither {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.ftr-go-in {
+  position: relative;
+  z-index: 2;
+  max-width: 50%;
+  margin-left: 25%; /* starts on the second column, as in the reference */
+  padding: 0 clamp(20px, 1.8vw, 34px);
+}
+.ftr-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 500 11.5px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+}
+.hatch {
+  flex: none;
+  width: 22px;
+  height: 10px;
+  background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.8) 0 1.5px, transparent 1.5px 4.5px);
+}
+.ftr-h2 {
+  margin: 20px 0 0;
+  font-size: clamp(40px, 3.6vw, 68px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+.ftr-lead {
+  margin: 22px 0 0;
+  max-width: 30em;
+  font-size: clamp(15px, 0.9vw, 17px);
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.7);
+}
+.ftr-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: clamp(28px, 2.3vw, 42px);
+}
+
+/* the links */
+.ftr-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.ftr-grid > * {
+  padding: clamp(36px, 2.8vw, 54px) clamp(20px, 1.8vw, 34px) clamp(44px, 3.4vw, 64px);
+}
+.ftr-brand {
+  display: grid;
+  place-items: center;
+}
+.ftr-brand .mark {
+  width: clamp(84px, 6.4vw, 122px);
+  height: auto;
+  fill: var(--white);
+  transition: fill 300ms var(--ease-out);
+}
+.ftr-brand:hover .mark {
+  fill: var(--red);
+}
+.ftr-grid nav {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+.ftr-grid h3 {
+  margin: 0 0 12px;
+  font: 500 11.5px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+.ftr-grid nav a {
+  width: fit-content;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.86);
+  transition: color var(--t-hover) var(--ease-out);
+}
+.ftr-grid nav a:hover {
+  color: var(--red);
+}
+.ftr-note {
+  margin: 20px 0 0;
+  max-width: 24em;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* the wordmark: the bottom of the letters is cut off by the edge; they rise out of it one after another
+   when it comes into view, and a letter turns red under the pointer */
+.ftr-word {
+  position: relative;
+  z-index: 2;
+  aspect-ratio: 11709 / 1296;
+  margin: clamp(8px, 1vw, 20px) var(--gutter) 0;
+  overflow: hidden;
+}
+.ftr-word svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.ftr-word path {
+  fill: var(--white);
+  transform: translateY(104%);
+  transform-box: fill-box;
+  transition:
+    transform 1150ms var(--ease) calc(var(--i) * 60ms),
+    fill 320ms var(--ease-out);
+}
+.ftr-word.is-up path {
+  transform: none;
+}
+.ftr-word path:hover {
+  fill: var(--red);
+}
+.ftr-copy {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  padding: 16px var(--gutter) 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  font: 500 11.5px/1 var(--mono);
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 900px) {
+  .ftr-go-in {
+    max-width: 75%;
+  }
+}
+@media (max-width: 760px) {
+  .ftr-lines {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ftr-lines i:nth-child(n + 2) {
+    display: none;
+  }
+  .ftr-go {
+    min-height: 520px;
+    align-items: end;
+  }
+  .ftr-go-in {
+    max-width: none;
+    margin-left: 0;
+    padding: 0 var(--gutter);
+  }
+  .ftr-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ftr-grid > * {
+    padding: 32px var(--gutter) 36px;
+  }
+  .ftr-brand {
+    grid-column: 1 / -1;
+    place-items: start;
+    padding-bottom: 0;
+  }
+}

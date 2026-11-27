@@ -1,0 +1,976 @@
+/* ------------------------------------------------------------------ section label */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.eyebrow i {
+  width: 7px;
+  height: 7px;
+  background: var(--red);
+}
+
+/* ------------------------------------------------------------------ how agents lose money (black) */
+/* after the reference's careers list: a tag, the title with a few words beside it, then the rows in a dashed
+   frame; a row lights up with a red gradient from the left under the pointer. Above it, the many paths of
+   the agents' operations run into one contract (Converge.tsx). */
+.tl {
+  position: relative;
+  margin-top: clamp(110px, 8.25vw, 157px);
+  padding: clamp(28px, 2.6vw, 50px) var(--gutter) clamp(90px, 7vw, 130px);
+  background: var(--black);
+  color: var(--white);
+  overflow: hidden;
+}
+.tl .px {
+  top: 0;
+  right: 0;
+}
+.tl-in {
+  position: relative;
+  width: min(1240px, 100%);
+  margin: 0 auto;
+}
+
+/* the convergence: a band a little wider than the list */
+.cv {
+  position: relative;
+  height: clamp(190px, 17vw, 330px);
+  margin: 0 calc(-1 * min(140px, 7vw)) clamp(36px, 3vw, 58px);
+}
+.cv-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* the contract in the middle, framed by four corner marks */
+.cv-box {
+  --c: rgba(255, 255, 255, 0.6);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 14px 22px;
+  font: 500 11.5px/1.2 var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.5);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 10px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) top left / 1px 10px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 10px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 1px 10px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 10px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 1px 10px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 10px 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 1px 10px no-repeat,
+    radial-gradient(closest-side, #141414, #000);
+}
+.cv-box b {
+  font-weight: 500;
+  color: var(--white);
+}
+/* the readout keeps one width while its words change, so the streaks always end at the same edge; when it
+   refuses something, its corners and the verdict turn red */
+.cv-box {
+  width: 300px;
+}
+.cv-box.is-bad {
+  --c: var(--red);
+}
+.cv-box.is-bad .cv-verdict {
+  color: var(--red);
+}
+
+.tl-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 18px clamp(32px, 4vw, 80px);
+  margin-bottom: clamp(26px, 2.2vw, 42px);
+}
+.tl-tag {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.tl-h2 {
+  margin: 0;
+  font-size: clamp(30px, 2.3vw, 44px);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.04em;
+}
+.tl-lead {
+  margin: 0;
+  max-width: 25em;
+  font-size: clamp(14.5px, 0.85vw, 16px);
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+/* the rows */
+.tl-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+}
+.tl-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: clamp(150px, 11vw, 196px) minmax(0, 1fr) clamp(140px, 9.5vw, 172px);
+  align-items: center;
+  gap: clamp(16px, 1.6vw, 30px);
+  min-height: 96px;
+  padding: 18px clamp(16px, 1.4vw, 26px);
+  border-top: 1px dashed rgba(255, 255, 255, 0.22);
+  outline: none;
+}
+.tl-row:first-child {
+  border-top: 0;
+}
+/* the light: a red gradient coming in from the left; it fades on the way out */
+.tl-row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #ff2028 0%, rgba(196, 8, 20, 0.78) 30%, rgba(96, 0, 8, 0.38) 64%, rgba(0, 0, 0, 0) 100%);
+  opacity: 0;
+  transform: scaleX(0.55);
+  transform-origin: left;
+  transition:
+    opacity 520ms var(--ease-out),
+    transform 760ms var(--ease-out);
+  pointer-events: none;
+}
+.tl-row.is-on::before {
+  opacity: 1;
+  transform: none;
+  transition-duration: 240ms, 560ms;
+}
+.tl-row > * {
+  position: relative;
+}
+.tl-row:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: -2px;
+}
+.tl-kind {
+  justify-self: start;
+  padding: 6px 8px 5px;
+  background: var(--red);
+  color: var(--white);
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    background-color 240ms var(--ease-out),
+    color 240ms var(--ease-out);
+}
+.tl-row.is-on .tl-kind {
+  background: var(--white);
+  color: var(--black);
+}
+.tl-text {
+  display: grid;
+  gap: 6px;
+}
+.tl-text b {
+  font-size: clamp(17px, 1.12vw, 21px);
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.tl-text span {
+  font-size: clamp(13px, 0.76vw, 14.5px);
+  font-weight: 500;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.55);
+  text-wrap: pretty;
+  transition: color 240ms var(--ease-out);
+}
+.tl-row.is-on .tl-text span {
+  color: rgba(255, 255, 255, 0.88);
+}
+/* the outcome: a grey square at rest; under the pointer it turns white and opens into the word */
+.tl-out {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  background: #262626;
+  transition:
+    background-color 240ms var(--ease-out),
+    color 240ms var(--ease-out);
+}
+.tl-out i {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+}
+.tl-out i::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--red);
+}
+.tl-word {
+  display: grid;
+  grid-template-columns: 0fr;
+  transition: grid-template-columns 460ms var(--ease-out);
+}
+.tl-word-c {
+  min-width: 0;
+  overflow: hidden;
+}
+.tl-word-t {
+  display: block;
+  padding: 0 2px 0 13px;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tl-row.is-on .tl-out {
+  background: var(--white);
+  color: var(--black);
+}
+.tl-row.is-on .tl-word {
+  grid-template-columns: 1fr;
+}
+/* without a pointer to hover with, the outcome stays open */
+@media (hover: none) {
+  .tl-word {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .tl-head {
+    grid-template-columns: 1fr;
+  }
+  .tl-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 18px 16px 20px;
+  }
+  .tl-out {
+    justify-self: start;
+  }
+  .tl-word {
+    grid-template-columns: 1fr;
+  }
+  .cv {
+    margin-left: calc(-1 * var(--gutter));
+    margin-right: calc(-1 * var(--gutter));
+  }
+  .cv-box {
+    width: 236px;
+    padding: 10px 14px;
+    font-size: 9.5px;
+  }
+}
+
+/* ------------------------------------------------------------------ developers */
+/* packaged as the tool itself: the promise and the way in on the left, an editor window on the right (on a
+   patch of the hero's red pixel grid), the four parts below as one row of columns */
+.dev {
+  padding: clamp(120px, 8.25vw, 157px) var(--gutter) 0;
+}
+.dev-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: center;
+  gap: clamp(40px, 4.6vw, 92px);
+  width: min(1460px, 100%);
+  margin: 0 auto;
+}
+.dev-intro {
+  display: grid;
+  justify-items: start;
+}
+.dev-h {
+  margin: 20px 0 0;
+}
+.dev-lead {
+  margin: clamp(18px, 1.5vw, 26px) 0 0;
+  max-width: 25em;
+  font-size: clamp(16px, 1.05vw, 19px);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: rgba(0, 0, 0, 0.62);
+}
+/* the two commands that run it, in a small terminal card */
+.dev-run {
+  width: min(100%, 440px);
+  margin-top: clamp(28px, 2.4vw, 42px);
+}
+.dev-cmd {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px 16px;
+  background: #0d0d0d;
+  color: var(--white);
+}
+.dev-cmd-h {
+  margin-bottom: 8px;
+  font: 500 10.5px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+.dev-cmd code {
+  font: 500 clamp(13px, 0.82vw, 14.5px) / 1.5 var(--mono);
+}
+.dev-cmd code i {
+  margin-right: 12px;
+  font-style: normal;
+  color: var(--red);
+}
+.dev-run p {
+  margin: 12px 0 0;
+  max-width: 30em;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.55);
+}
+/* a copy button whose two labels share one cell, so it never changes width */
+.dev-copy {
+  display: inline-grid;
+  padding: 7px 10px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.1);
+  font: 500 10.5px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--white);
+  cursor: pointer;
+  transition:
+    background-color var(--t-hover) var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+.dev-copy:hover {
+  background: var(--red);
+}
+.dev-copy:active {
+  transform: scale(0.96);
+}
+.dev-copy span {
+  grid-area: 1 / 1;
+  text-align: center;
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+}
+.dev-copy span[aria-hidden="true"] {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.dev-cmd .dev-copy {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.dev-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: clamp(24px, 2vw, 34px);
+}
+
+/* the editor, on a patch of the hero's red pixel grid that fades out round it */
+.dev-stage {
+  position: relative;
+}
+.dev-stage::before {
+  content: "";
+  position: absolute;
+  inset: -14% -9% -20% 16%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7'%3E%3Crect width='6' height='6' fill='%23FF2028'/%3E%3C/svg%3E");
+  opacity: 0.3;
+  mask-image: radial-gradient(ellipse 56% 54% at 64% 58%, #000 12%, rgba(0, 0, 0, 0.42) 48%, transparent 78%);
+  pointer-events: none;
+}
+.ide {
+  position: relative;
+  background: #0d0d0d;
+  color: rgba(255, 255, 255, 0.86);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 50px 100px -44px rgba(0, 0, 0, 0.55),
+    0 22px 44px -26px rgba(0, 0, 0, 0.45);
+}
+.ide-bar {
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  background: #151515;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+/* the window's three corner squares: the brand's red, then two greys */
+.ide-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+}
+.ide-dots i {
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.16);
+}
+.ide-dots i:first-child {
+  background: var(--red);
+}
+.ide-tabs {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ide-tabs button {
+  position: relative;
+  flex: none;
+  margin-bottom: -1px;
+  padding: 0 16px;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  background: none;
+  font: 500 12px/1 var(--mono);
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition:
+    background-color var(--t-hover) var(--ease-out),
+    color var(--t-hover) var(--ease-out);
+}
+.ide-tabs button:last-child {
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+.ide-tabs button:hover {
+  color: var(--white);
+}
+/* the open file joins the code below it, with a red rule along its top */
+.ide-tabs button.is-on {
+  background: #0d0d0d;
+  color: var(--white);
+}
+.ide-tabs button::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s var(--ease-out);
+}
+.ide-tabs button.is-on::before {
+  transform: none;
+}
+.ide-copy {
+  align-self: center;
+  margin: 0 12px 0 auto;
+}
+.ide-code {
+  margin: 0;
+  padding: clamp(18px, 1.5vw, 26px) 0 clamp(20px, 1.6vw, 28px);
+  min-height: 20.5em;
+  overflow-x: auto;
+  font: 400 clamp(12.5px, 0.82vw, 15px) / 1.75 var(--mono);
+  /* where a line runs past the window (on a phone), a thin dark scrollbar, not the light default */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.code-line {
+  display: flex;
+  padding-right: 24px;
+  animation: line-in 0.45s var(--ease) both;
+}
+@keyframes line-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+.code-ln {
+  flex: none;
+  width: 3.6em;
+  padding-right: 1.3em;
+  text-align: right;
+  color: rgba(255, 255, 255, 0.2);
+  user-select: none;
+}
+.code-line code {
+  font: inherit;
+  white-space: pre;
+}
+.t-k {
+  color: var(--white);
+  font-weight: 600;
+}
+.t-s {
+  color: #ff5c62;
+}
+.t-c {
+  color: rgba(255, 255, 255, 0.38);
+}
+.t-f {
+  color: var(--white);
+}
+/* what comes back: the relay's reply, Claude's tool result or forge's output; its light blinks red while the
+   reply is on its way */
+.ide-out {
+  min-height: 9.8em;
+  padding: 14px clamp(16px, 1.3vw, 24px) 18px calc(3.6em + 2px);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: #090909;
+  font: 400 clamp(12px, 0.76vw, 13.5px) / 1.75 var(--mono);
+  color: rgba(255, 255, 255, 0.86);
+}
+.ide-out-h {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+  font: 500 10.5px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+.ide-led {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.3);
+}
+.ide-led.is-on {
+  background: var(--red);
+  animation: caret 0.8s steps(1) infinite;
+}
+.code-out-l {
+  white-space: pre-wrap;
+  animation: line-in 0.35s var(--ease) both;
+}
+.code-out-l.is-dim {
+  color: rgba(255, 255, 255, 0.45);
+}
+.code-out-l.is-red {
+  color: #ff5c62;
+}
+.code-out-l.is-ok {
+  color: var(--white);
+}
+.code-caret::before {
+  content: "";
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  vertical-align: -0.2em;
+  background: rgba(255, 255, 255, 0.7);
+  /* a terminal caret, blinking a few times while the reply is on its way, then holding still */
+  animation: caret 1s steps(1) 4;
+}
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* the four parts, one column each between hairlines; the one shown in the editor carries a red rule */
+.dev-parts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: min(1460px, 100%);
+  margin: clamp(56px, 5vw, 96px) auto 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+.dev-parts li + li {
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+}
+.dev-parts button {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+  padding: clamp(22px, 1.7vw, 30px) clamp(18px, 1.4vw, 26px) clamp(24px, 1.9vw, 34px);
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.3s var(--ease-out);
+}
+.dev-parts button::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 2px;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease-out);
+}
+.dev-parts button:hover {
+  background: #fafafa;
+}
+.dev-parts button:hover::before,
+.dev-parts button.is-on::before {
+  transform: none;
+}
+.dp-h {
+  display: grid;
+  gap: 6px;
+}
+.dp-h b {
+  font-size: clamp(18px, 1.2vw, 22px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.dp-h span {
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.04em;
+  color: rgba(0, 0, 0, 0.45);
+}
+.dp-calls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dp-calls code {
+  padding: 5px 8px;
+  background: #f1f1f1;
+  font: 500 12px/1 var(--mono);
+  color: var(--black);
+  transition: background-color 0.3s var(--ease-out);
+}
+.dev-parts button.is-on .dp-calls code {
+  background: #0d0d0d;
+  color: var(--white);
+}
+.dp-line {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 1100px) {
+  .dev-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dev-parts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dev-parts li:nth-child(3) {
+    border-left: 0;
+  }
+  .dev-parts li:nth-child(n + 3) {
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+  }
+}
+@media (max-width: 640px) {
+  .dev-parts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dev-parts li + li {
+    border-left: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+  }
+  .ide-dots {
+    padding: 0 12px;
+  }
+  .ide-tabs button {
+    padding: 0 12px;
+    font-size: 11px;
+  }
+  /* the tabs scroll sideways on a phone; their row fades out before the copy button */
+  .ide-tabs {
+    mask-image: linear-gradient(90deg, #000 78%, transparent);
+  }
+}
+
+/* ------------------------------------------------------------------ $KILL (black) */
+.token {
+  position: relative;
+  display: grid;
+  gap: clamp(48px, 4vw, 80px);
+  margin-top: clamp(150px, 14.2vw, 270px);
+  padding: clamp(14px, 1.1vw, 21px) var(--gutter);
+  background: var(--black);
+  color: var(--white);
+}
+.token-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+.token-top {
+  display: grid;
+  gap: 12px;
+}
+.token-big {
+  margin: 0;
+  font-size: clamp(48px, 4.75vw, 90px);
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+}
+.token-mid {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  text-align: right;
+}
+.token-jobs {
+  margin: 0;
+  max-width: 9em;
+  font-size: clamp(32px, 2.9vw, 55px);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+.token-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 40px;
+}
+.token-copy {
+  display: grid;
+  gap: 14px;
+  max-width: 30em;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+.token-copy p {
+  margin: 0;
+}
+.token-link {
+  width: fit-content;
+  border-bottom: 1px solid var(--red);
+  transition: color var(--t-hover) var(--ease-out);
+}
+.token-link:hover {
+  color: var(--red);
+}
+.token-facts {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 32px;
+  margin: 0;
+}
+.token-facts dt {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+}
+.token-facts dd {
+  margin: 6px 0 0;
+  font-size: clamp(20px, 1.38vw, 26px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.token-note {
+  margin: 0;
+  max-width: 60em;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.45);
+}
+.token .px {
+  top: 0;
+  right: 0;
+}
+
+/* the pre-sale bar: 100 squares, one per 2,500 USD of the 250,000 USD maximum */
+.presale {
+  display: grid;
+  gap: clamp(14px, 1.15vw, 22px);
+}
+.presale-head,
+.presale-nums,
+.presale-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+.presale-head {
+  align-items: baseline;
+}
+.presale-when {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.6);
+}
+.presale-nums {
+  align-items: flex-end;
+}
+.presale-amount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+  margin: 0;
+}
+.presale-amount b,
+.presale-pct {
+  font-size: var(--t-stat);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+.presale-amount span {
+  font-size: clamp(14px, 0.95vw, 18px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.6);
+}
+.presale-pct {
+  color: rgba(255, 255, 255, 0.32);
+}
+.presale-bar {
+  display: grid;
+  grid-template-columns: repeat(100, minmax(0, 1fr));
+  gap: clamp(2px, 0.21vw, 4px);
+}
+.presale-bar i {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+/* the bar is seen: the committed squares turn red one after another from the left, each with a white
+   flash as it fills, so the eye follows the fill along the bar */
+.presale.is-on .presale-bar i.is-full {
+  background: var(--red);
+  animation: presale-fill 560ms var(--ease-out) both;
+  animation-delay: calc(120ms + var(--i) * var(--gap));
+}
+@keyframes presale-fill {
+  0% {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(0.6);
+  }
+  30% {
+    background-color: var(--white);
+    transform: scale(1.12);
+  }
+  100% {
+    background-color: var(--red);
+    transform: none;
+  }
+}
+/* the square being filled fills from the bottom, after the whole ones */
+.presale-bar i.is-part::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 700ms var(--ease-out) calc(220ms + var(--i) * var(--gap));
+}
+.presale.is-on .presale-bar i.is-part::after {
+  transform: scaleY(var(--f));
+}
+.presale-pct.is-some {
+  color: var(--white);
+}
+/* an empty bar: a red square runs along it, the first time it is seen */
+.presale.is-on.is-empty .presale-bar i {
+  animation: presale-scan 0.55s var(--ease-out) both;
+  animation-delay: calc(150ms + var(--i) * 12ms);
+}
+@keyframes presale-scan {
+  15% {
+    background-color: var(--red);
+  }
+}
+.presale-scale {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ------------------------------------------------------------------ smaller screens */
+@media (max-width: 1100px) {
+  .token-bottom {
+    grid-template-columns: 1fr;
+  }
+  .token-facts {
+    grid-template-columns: repeat(2, auto);
+    justify-content: start;
+  }
+  .presale-bar {
+    grid-template-columns: repeat(50, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .presale-bar {
+    grid-template-columns: repeat(25, minmax(0, 1fr));
+  }
+  .presale-head {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+@media (max-width: 760px) {
+  .token .px {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ one voice for the small labels */
+/* every small label on the page speaks in the same mono capitals as the bar along the top */
+.eyebrow,
+.token-label,
+.token-facts dt,
+.presale-when,
+.presale-scale,
+.scard-tag,
+.story-progress {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}

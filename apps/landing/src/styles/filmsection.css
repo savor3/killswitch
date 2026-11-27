@@ -1,0 +1,51 @@
+/* The film on black satin. Measured on the reference at 1905 px: the box is 1660 x 928 and the film
+   1059 px wide in its middle (63.8 %), 80 px under the heading. */
+.film {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: clamp(48px, 4.2vw, 80px);
+  padding: clamp(120px, 12.7vw, 242px) var(--gutter) 0;
+}
+.film-h {
+  text-align: center;
+  text-wrap: balance;
+}
+.film-box {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(1660px, 100%);
+  aspect-ratio: 1660 / 928;
+  overflow: hidden;
+  background: var(--black);
+}
+.film-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.film-video {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 63.8%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: var(--white);
+}
+/* the pointer's squares run over the satin and the film alike, as on the reference */
+.film-box .trail {
+  z-index: 2;
+}
+
+@media (max-width: 760px) {
+  .film-box {
+    aspect-ratio: 4 / 3.3;
+  }
+  .film-video {
+    width: 88%;
+  }
+}

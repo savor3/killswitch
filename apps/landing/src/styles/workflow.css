@@ -1,0 +1,916 @@
+/* One operation, start to finish, as a node editor's canvas: the runs on the left, the graph on a dotted
+   grid in the middle, the station's data on the right, the relay's log under the graph. */
+.wf {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  padding: clamp(140px, 12.7vw, 242px) var(--gutter) 0;
+}
+.wf-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: clamp(28px, 2.6vw, 50px);
+  text-align: center;
+}
+.wf-sub {
+  max-width: 19.5em;
+}
+
+/* ------------------------------------------------------------------ the canvas */
+.wfc {
+  --line: rgba(255, 255, 255, 0.11);
+  display: grid;
+  grid-template-columns: clamp(176px, 11.6vw, 222px) minmax(0, 1fr) clamp(300px, 19.6vw, 374px);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  width: min(1660px, 100%);
+  margin-top: clamp(48px, 4vw, 80px);
+  background: var(--black);
+  color: var(--white);
+}
+.wfc-label {
+  font: 500 10.5px/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* the runs */
+.wfc-side {
+  grid-column: 1;
+  grid-row: 1 / 4;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-right: 1px solid var(--line);
+}
+.wfc-runs {
+  display: grid;
+  gap: 8px;
+}
+.wfc-runs button {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding: 11px 12px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: var(--white);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--t-hover) var(--ease-out),
+    color var(--t-hover) var(--ease-out),
+    border-color var(--t-hover) var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+.wfc-runs button:active {
+  transform: scale(0.97);
+}
+.wfc-runs button b {
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.wfc-runs button span {
+  font: 400 11px/1.2 var(--mono);
+  color: rgba(255, 255, 255, 0.45);
+}
+.wfc-runs button:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.wfc-runs button.is-on {
+  border-color: var(--white);
+  background: var(--white);
+  color: var(--black);
+}
+.wfc-runs button.is-on span {
+  color: rgba(0, 0, 0, 0.55);
+}
+/* how far the run has got, drawn from the run's own clock */
+.wf-timer {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--red);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.wfc-hatch {
+  width: 72%;
+  height: 20px;
+  margin-top: auto;
+  background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.42) 0 1.5px, transparent 1.5px 6px);
+}
+.wfc-hint {
+  font: 400 11px/1.3 var(--mono);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* the toolbar */
+.wfc-bar {
+  grid-column: 2 / 4;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.wfc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font: 500 12px/1 var(--mono);
+  white-space: nowrap;
+}
+.wfc-chip em {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+/* the run's own clock, in the log's units */
+.wfc-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-left: auto;
+  font: 500 12px/1 var(--mono);
+  color: var(--white);
+}
+.wfc-clock em {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.wfc-clock b {
+  min-width: 4.4em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* the graph */
+.wfc-graph {
+  grid-column: 2;
+  grid-row: 2;
+  padding: clamp(10px, 1.1vw, 22px) clamp(10px, 1.1vw, 22px) clamp(6px, 0.6vw, 12px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1.3px);
+  background-size: 22px 22px;
+  background-position: 11px 11px;
+}
+.wfc-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.wfc-svg text {
+  font-family: var(--mono);
+}
+/* the stations: a dark body, a red fill that sweeps across from the side the operation came in by while
+   the station works on it, the outline and the icon on top */
+.wfc-body {
+  fill: #0b0b0b;
+}
+.wfc-edge {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 1.2;
+  transition: stroke 450ms var(--ease-out);
+}
+.wfc-fill {
+  fill: var(--red);
+  opacity: 0;
+  transition: opacity 900ms var(--ease-out);
+}
+.wfc-ic {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 450ms var(--ease-out);
+}
+.wfc-name {
+  font-size: 13px;
+  fill: rgba(255, 255, 255, 0.55);
+  transition: fill 450ms var(--ease-out);
+}
+.wfc-sub {
+  font-size: 10.5px;
+  fill: rgba(255, 255, 255, 0.36);
+  transition: fill 450ms var(--ease-out);
+}
+.wfc-port {
+  fill: var(--black);
+  stroke: rgba(255, 255, 255, 0.4);
+  stroke-width: 1.2;
+}
+.wfc-box {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* at work on it: a red outline and the fill coming in */
+.wfc-n.is-busy .wfc-edge,
+.wfc-n.is-waiting .wfc-edge {
+  stroke: var(--red);
+  transition-duration: 200ms;
+}
+.wfc-n.is-busy .wfc-fill,
+.wfc-n.is-waiting .wfc-fill {
+  opacity: 0.32;
+  transition-duration: 200ms;
+}
+.wfc-n.is-busy .wfc-ic,
+.wfc-n.is-waiting .wfc-ic,
+.wfc-n.is-done .wfc-ic {
+  stroke: var(--white);
+}
+.wfc-n.is-busy .wfc-name,
+.wfc-n.is-waiting .wfc-name,
+.wfc-n.is-done .wfc-name {
+  fill: var(--white);
+}
+/* done with it: a white outline, the fill fading out behind the operation */
+.wfc-n.is-done .wfc-edge {
+  stroke: rgba(255, 255, 255, 0.85);
+}
+/* refused, or paused on-chain: solid red, with a shake where it was refused */
+.wfc-n.is-bad .wfc-fill,
+.wfc-n.is-paused .wfc-fill {
+  opacity: 1;
+  transition-duration: 160ms;
+}
+.wfc-n.is-bad .wfc-edge,
+.wfc-n.is-paused .wfc-edge,
+.wfc-n.is-noted .wfc-edge,
+.wfc-n.is-thief .wfc-edge {
+  stroke: var(--red);
+}
+.wfc-n.is-bad .wfc-ic,
+.wfc-n.is-paused .wfc-ic {
+  stroke: var(--white);
+}
+.wfc-n.is-noted .wfc-ic {
+  stroke: var(--red);
+}
+.wfc-n.is-bad .wfc-name,
+.wfc-n.is-bad .wfc-sub,
+.wfc-n.is-paused .wfc-name,
+.wfc-n.is-paused .wfc-sub {
+  fill: var(--red);
+}
+.wfc-n.is-bad .wfc-box {
+  animation: wfc-refuse 0.46s var(--ease-out);
+}
+@keyframes wfc-refuse {
+  18% {
+    transform: translateX(-5px);
+  }
+  36% {
+    transform: translateX(5px);
+  }
+  54% {
+    transform: translateX(-3px);
+  }
+  72% {
+    transform: translateX(2px);
+  }
+}
+/* skipped by the leaked key */
+.wfc-n.is-skip {
+  opacity: 0.32;
+}
+.wfc-n.is-skip .wfc-edge {
+  stroke-dasharray: 4 4;
+}
+/* waiting for you: a slow ring keeps leaving the station until you sign */
+.wfc-wait {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.4;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+  animation: wfc-wait 1.3s var(--ease-out) infinite;
+}
+@keyframes wfc-wait {
+  from {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* the edges: faint until travelled; the square draws a red line behind it, which settles into a white
+   route once it has arrived */
+.wfc-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 1.3;
+  transition: stroke 700ms var(--ease-out);
+}
+.wfc-e.is-gone .wfc-line {
+  stroke: transparent;
+}
+.wfc-e.is-bypass .wfc-line {
+  stroke-dasharray: 4 5;
+}
+.wfc-e.is-on .wfc-line {
+  stroke: rgba(255, 255, 255, 0.72);
+}
+.wfc-e.is-bad .wfc-line {
+  stroke: var(--red);
+  stroke-dasharray: 5 5;
+}
+.wfc-trail {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 2;
+  pointer-events: none;
+  transition: opacity 1.1s var(--ease-out);
+}
+.wfc-e.is-idle .wfc-trail,
+.wfc-e.is-gone .wfc-trail {
+  opacity: 0;
+  transition: none;
+}
+.wfc-e.is-on .wfc-trail,
+.wfc-e.is-bad .wfc-trail {
+  opacity: 0;
+}
+.wfc-e text {
+  font-size: 10.5px;
+  fill: rgba(255, 255, 255, 0.62);
+  animation: wf-in 0.6s var(--ease) both;
+}
+.wfc-e.is-bad text,
+.wfc-e.is-sig text {
+  fill: var(--red);
+}
+
+/* a tick on each station passed, a cross where the operation was refused, a pause where it was paused */
+.wfc-badge {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wfc-badge 0.42s var(--ease-out) both;
+}
+.wfc-badge circle {
+  fill: var(--white);
+}
+.wfc-badge path {
+  fill: none;
+  stroke: var(--black);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.wfc-badge.is-bad circle,
+.wfc-badge.is-pause circle {
+  fill: var(--red);
+}
+.wfc-badge.is-bad path,
+.wfc-badge.is-pause path {
+  stroke: var(--white);
+}
+@keyframes wfc-badge {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+/* what the agent asks for, and what the guardian makes of it */
+.wfc-ask,
+.wfc-score {
+  animation: wfc-badge 0.45s var(--ease-out) both;
+  transform-box: fill-box;
+  transform-origin: left bottom;
+}
+.wfc-score {
+  transform-origin: center;
+}
+.wfc-ask rect {
+  fill: var(--white);
+}
+.wfc-ask text {
+  font-size: 10.5px;
+  fill: var(--black);
+}
+.wfc-ask.is-bad rect {
+  fill: var(--red);
+}
+.wfc-ask.is-bad text {
+  fill: var(--white);
+}
+.wfc-score rect {
+  fill: var(--black);
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1.2;
+  transition:
+    fill 300ms var(--ease-out),
+    stroke 300ms var(--ease-out);
+}
+.wfc-score text {
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  fill: var(--white);
+}
+.wfc-score.is-mid rect {
+  stroke: var(--red);
+}
+.wfc-score.is-mid text {
+  fill: var(--red);
+}
+.wfc-score.is-high rect {
+  fill: var(--red);
+  stroke: var(--red);
+}
+
+/* the operation, and the fading copies of it that show its speed */
+.wfc-packet,
+.wfc-ghost {
+  fill: var(--red);
+  opacity: 0;
+}
+
+/* the inspector */
+.wfc-insp {
+  grid-column: 3;
+  grid-row: 2 / 4;
+  min-width: 0;
+  padding: 20px;
+  border-left: 1px solid var(--line);
+}
+.wfc-insp-h {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.wfc-insp-h b {
+  font-size: clamp(17px, 1.05vw, 20px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.wfc-insp-h > span:last-child {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+}
+.wfc-outcome {
+  margin: 0;
+  font-size: clamp(20px, 1.4vw, 26px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.wfc.is-bad .wfc-outcome {
+  color: var(--red);
+}
+.wf-panel > * {
+  animation: wf-in 0.55s var(--ease) both;
+}
+@keyframes wf-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* the relay's log */
+.wfc-log {
+  grid-column: 2;
+  grid-row: 3;
+  min-height: 150px;
+  margin: 0;
+  padding: 14px 18px 18px;
+  list-style: none;
+  border-top: 1px solid var(--line);
+  font: 400 11.5px/1.75 var(--mono);
+  color: rgba(255, 255, 255, 0.7);
+}
+.wfc-log li {
+  display: grid;
+  grid-template-columns: 4.4em 6.4em minmax(0, 1fr);
+  gap: 10px;
+  animation: wf-in 0.4s var(--ease) both;
+}
+.wfc-log li span {
+  color: rgba(255, 255, 255, 0.35);
+}
+.wfc-log li em {
+  font-style: normal;
+  color: var(--white);
+}
+.wfc-log li.is-bad,
+.wfc-log li.is-bad em {
+  color: var(--red);
+}
+
+/* ------------------------------------------------------------------ the stations' own data */
+/* agent */
+.wf-msg {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--black);
+}
+.wf-msg span {
+  font-size: clamp(11px, 0.63vw, 12px);
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.5);
+}
+.wf-msg b {
+  font-size: clamp(15px, 0.95vw, 18px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+.wf-msg q {
+  font-size: clamp(12px, 0.7vw, 13.5px);
+  font-style: italic;
+  line-height: 1.3;
+  color: rgba(0, 0, 0, 0.6);
+}
+.wf-msg q.is-none {
+  font-style: normal;
+  quotes: none;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* session key */
+.wf-op {
+  font: 400 clamp(12px, 0.7vw, 13.5px) / 1.6 var(--mono);
+}
+.wf-op-h {
+  margin-bottom: 4px;
+  color: var(--white);
+}
+.wf-op dl {
+  margin: 0;
+}
+.wf-op dl div {
+  display: grid;
+  grid-template-columns: 6.6em 1fr;
+}
+.wf-op dt {
+  color: rgba(255, 255, 255, 0.4);
+}
+.wf-op dd {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+}
+.wf-note {
+  margin: 12px 0 0;
+  font: 500 clamp(12px, 0.68vw, 13px) / 1.35 var(--sans);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* guardian */
+.wf-guard {
+  display: grid;
+  gap: 12px;
+  font-size: clamp(12.5px, 0.74vw, 14px);
+  line-height: 1.3;
+}
+.wf-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.wf-kv b {
+  font: 400 1em/1.3 var(--mono);
+  color: var(--white);
+}
+.wf-revert {
+  font: 400 1em/1.3 var(--mono);
+  color: var(--red);
+}
+.wf-signals {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wf-signals li {
+  display: flex;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  animation: wf-in 0.45s var(--ease) both;
+}
+.wf-signals li b {
+  font: 400 1em/1.3 var(--mono);
+  color: var(--white);
+}
+.wf-signals li.is-none {
+  color: rgba(255, 255, 255, 0.45);
+}
+.wf-guard.is-bad .wf-signals li {
+  color: var(--red);
+}
+.wf-scale {
+  position: relative;
+  height: 4px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.55) 0 30%, rgba(255, 255, 255, 0.22) 30% 70%, var(--red) 70% 100%);
+}
+.wf-scale i {
+  position: absolute;
+  top: -5px;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  background: var(--white);
+  box-shadow: 0 0 0 2px var(--black);
+  animation: wf-needle 0.9s var(--ease-io) 0.4s both;
+}
+@keyframes wf-needle {
+  from {
+    left: 0;
+  }
+}
+.wf-scale-l {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+}
+.wf-scale-l span:first-child {
+  font-family: var(--mono);
+  color: var(--white);
+}
+.wf-verdict {
+  justify-self: start;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--black);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  animation: wf-in 0.45s var(--ease) 1.1s both;
+}
+.wf-guard.is-bad .wf-verdict {
+  background: var(--red);
+  color: var(--white);
+}
+
+/* you */
+.wf-quiet,
+.wf-skip {
+  margin: 0;
+  font-size: clamp(13px, 0.74vw, 14px);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.42);
+}
+.wf-phone {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--black);
+}
+.wf-phone > span {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.5);
+}
+.wf-phone > b {
+  font-size: clamp(13.5px, 0.8vw, 15px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.wf-phone-b {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.wf-phone-b em {
+  position: relative;
+  flex: 1;
+  padding: 7px 0;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  text-align: center;
+  transition: transform 0.2s var(--ease), background-color 0.2s;
+}
+.wf-phone-b em.is-dark {
+  background: var(--black);
+  border-color: var(--black);
+  color: var(--white);
+}
+.wf-phone-b em.is-press {
+  transform: scale(0.94);
+  background: var(--red);
+  border-color: var(--red);
+}
+/* the owner's pointer, as on the reference's canvas: it comes in and lands on Approve */
+.wfc-you {
+  position: absolute;
+  left: 58%;
+  top: 52%;
+  display: flex;
+  align-items: flex-start;
+  pointer-events: none;
+  animation: wfc-you 0.8s var(--ease) both;
+}
+.wfc-you svg {
+  width: 20px;
+  height: 20px;
+  fill: var(--black);
+  stroke: var(--white);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+.wfc-you i {
+  margin: 15px 0 0 -2px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #2b2b2b;
+  color: var(--white);
+  font: normal 600 10px/1 var(--sans);
+}
+@keyframes wfc-you {
+  from {
+    opacity: 0;
+    transform: translate(70px, 56px);
+  }
+  35% {
+    opacity: 1;
+  }
+}
+.wf-phone-ok {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  animation: wf-in 0.4s var(--ease);
+}
+.wf-phone-ok::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--red);
+}
+.wf-alert {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--red);
+  border-radius: 8px;
+}
+.wf-alert b {
+  font-size: clamp(13.5px, 0.8vw, 15px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--red);
+}
+.wf-alert span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* wallet contract */
+.wf-checks {
+  display: grid;
+  gap: 8px;
+  font-size: clamp(12.5px, 0.74vw, 14px);
+  font-weight: 500;
+}
+.wf-checks > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  animation: wf-in 0.4s var(--ease) both;
+}
+.wf-checks i {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.wf-checks .is-ok i {
+  background: var(--white);
+  border-color: var(--white);
+}
+.wf-checks .is-bad {
+  color: var(--red);
+}
+.wf-checks .is-bad i {
+  background: var(--red);
+  border-color: var(--red);
+}
+.wf-checks .is-off {
+  color: rgba(255, 255, 255, 0.35);
+}
+.wf-result {
+  margin: 8px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  font: 400 1em/1.3 var(--mono);
+  color: var(--white);
+  animation: wf-in 0.45s var(--ease) both;
+}
+.wf-checks.is-bad .wf-result {
+  color: var(--red);
+}
+.wf-never {
+  display: grid;
+  gap: 6px;
+}
+.wf-never b {
+  font-size: clamp(15px, 0.9vw, 17px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.wf-never span {
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ------------------------------------------------------------------ narrower screens */
+/* the runs become a row above the toolbar; the inspector and the log go under the graph */
+@media (max-width: 1100px) {
+  .wfc {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .wfc-side,
+  .wfc-bar,
+  .wfc-graph,
+  .wfc-insp,
+  .wfc-log {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .wfc-side {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .wfc-runs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .wfc-runs button span,
+  .wfc-hatch,
+  .wfc-hint {
+    display: none;
+  }
+  .wfc-insp {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .wfc-log {
+    min-height: 0;
+  }
+}
+@media (max-width: 760px) {
+  .wfc-side > .wfc-label,
+  .wfc-net {
+    display: none;
+  }
+  .wfc-bar {
+    flex-wrap: wrap;
+  }
+  .wfc-log li {
+    grid-template-columns: 5.8em minmax(0, 1fr);
+  }
+  .wfc-log li span {
+    display: none;
+  }
+}
