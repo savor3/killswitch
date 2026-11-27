@@ -1,0 +1,115 @@
+/* Opening screen. The track holds the red panels (off-screen left) and the black ground (covering the view);
+   the whole track slides right, so the page appears behind the panels. */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  pointer-events: none;
+}
+.loader-track {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+.loader.is-wipe .loader-track {
+  transform: translateX(calc(100vw + 36vw));
+  transition: transform 980ms var(--ease-io);
+}
+.loader-panels {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 100%;
+  width: 36vw;
+  display: flex;
+}
+.loader-panels i {
+  height: 100%;
+}
+.p-soft {
+  width: 32%;
+  background: var(--red-soft);
+}
+.p-red {
+  width: 38%;
+  background: var(--red);
+}
+.p-deep {
+  width: 30%;
+  background: var(--red-deep);
+}
+.loader-ground {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--black);
+}
+.loader-lockup {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.3em;
+  font: 700 clamp(30px, 2.65vw, 50px) / 0.727 var(--sans);
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+}
+.loader-lockup .mark {
+  height: 1.04em;
+  width: auto;
+  fill: #2e2e2e;
+  transition: fill 0.25s;
+}
+.loader-lockup .mark.is-on {
+  fill: var(--white);
+}
+.loader-word {
+  position: relative;
+  display: inline-flex;
+}
+.loader-word [data-l] {
+  color: #2e2e2e;
+  transition: color 0.15s;
+}
+.loader-word [data-l].is-lit {
+  color: var(--white);
+}
+.loader-px {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--red);
+}
+/* at the end of the word the square rests, then flickers three times, each quicker, and goes out:
+   on 210 ms, then off 84 / on 72 / off 60 / on 54 / off 48 / on 42 ms. Loader.tsx waits BLINK_MS
+   (the 600 ms of this animation) and a short dark pause before the panels sweep. */
+.loader.is-blink .loader-px {
+  animation: loader-blink 600ms step-end forwards;
+}
+@keyframes loader-blink {
+  0% {
+    opacity: 1;
+  }
+  35% {
+    opacity: 0;
+  }
+  49% {
+    opacity: 1;
+  }
+  61% {
+    opacity: 0;
+  }
+  71% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0;
+  }
+  88% {
+    opacity: 1;
+  }
+  95%,
+  100% {
+    opacity: 0;
+  }
+}

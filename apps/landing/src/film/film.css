@@ -1,0 +1,650 @@
+/* The film's look: the dashboard drawn large on white, in the landing's type and colours. Nothing here
+   animates by itself; every moving value is set per frame from Film.tsx. */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/geist-mono-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: block;
+}
+
+:root {
+  --ink: #0a0a0a;
+  --muted: #8b8b8b;
+  --line: #e9e9e9;
+  --soft: #f6f6f6;
+  --red: #ff2028;
+  --pink: #fff1f1;
+  --pink-line: #ffd3d5;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background: #fff;
+}
+.stage {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #fff;
+  color: var(--ink);
+  font: 500 26px/1.35 "Inter", sans-serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.012em;
+  -webkit-font-smoothing: antialiased;
+}
+.scene,
+.ui,
+.veil {
+  position: absolute;
+  inset: 0;
+}
+.veil {
+  background: #fff;
+}
+.cam {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+}
+.mono {
+  font-family: "Geist Mono", monospace;
+  letter-spacing: -0.02em;
+}
+.muted {
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ chapter titles */
+.title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1240px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  text-wrap: balance;
+  font-size: 74px;
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.045em;
+}
+.title span {
+  display: inline-block;
+  white-space: pre;
+}
+.title .red {
+  color: var(--red);
+}
+
+/* ------------------------------------------------------------------ shared parts */
+.card {
+  position: absolute;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 22px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03), 0 18px 48px rgba(0, 0, 0, 0.06);
+}
+.h2 {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+.eyebrow {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 30px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  font-size: 25px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.btn.dark {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+.btn.red {
+  border-color: var(--red);
+  background: var(--red);
+  color: #fff;
+}
+.ic {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+.spin {
+  display: inline-block;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 3.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 22px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pill.dark {
+  background: var(--ink);
+  color: #fff;
+}
+.pill.red {
+  background: var(--pink);
+  color: var(--red);
+}
+.av {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--soft);
+}
+.av.red {
+  background: var(--pink);
+  color: var(--red);
+}
+.av.dark {
+  background: var(--ink);
+  color: #fff;
+}
+.quote {
+  padding: 20px 26px;
+  border-radius: 14px;
+  background: var(--soft);
+  font-size: 24px;
+}
+.quote .eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+/* the meters fill in the brand red: what is spent, what may still be spent */
+.meter {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--soft);
+  overflow: hidden;
+}
+.meter i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--red);
+}
+
+/* ------------------------------------------------------------------ 1. the limits */
+.steps {
+  display: flex;
+  gap: 34px;
+  margin-bottom: 40px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.steps span {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.steps b {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  font-size: 19px;
+  font-weight: 600;
+}
+.steps .on {
+  color: var(--ink);
+}
+.steps .on b {
+  border-color: var(--red);
+  background: var(--red);
+  color: #fff;
+}
+.steps .done b {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.lead {
+  margin: 14px 0 38px;
+  color: var(--muted);
+}
+.field {
+  margin-top: 30px;
+}
+.field > span {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 22px;
+  font-weight: 600;
+}
+.input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 66px;
+  padding: 0 24px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  font-size: 25px;
+}
+.presets,
+.seg {
+  display: flex;
+  gap: 12px;
+}
+.pre {
+  display: grid;
+  place-items: center;
+  height: 62px;
+  min-width: 112px;
+  padding: 0 24px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  font-weight: 600;
+}
+.pre.on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+.seg {
+  gap: 0;
+  padding: 5px;
+  border-radius: 16px;
+  background: var(--soft);
+}
+.seg span {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  height: 56px;
+  border-radius: 12px;
+  font-size: 23px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.seg .on {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 44px;
+}
+.review {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.rv {
+  padding: 26px 28px;
+  border-radius: 16px;
+  background: var(--soft);
+}
+.rv .eyebrow {
+  display: block;
+  margin-bottom: 16px;
+}
+.rv div {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 12px;
+  font-size: 23px;
+  line-height: 1.3;
+}
+.rv .ic {
+  margin-top: 3px;
+}
+.note {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 22px;
+  font-size: 22px;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ 2. the checks */
+.op-h {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.op-t {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+}
+.op-t b {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.op-t span {
+  font-size: 22px;
+}
+.grp {
+  margin: 34px 0 8px;
+}
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  height: 74px;
+  border-top: 1.5px solid var(--line);
+}
+.row-run {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1.5px;
+  height: 1.5px;
+  background: var(--red);
+  transform-origin: left;
+}
+.row .num {
+  color: var(--muted);
+  font-size: 21px;
+}
+.row.is-now .num {
+  color: var(--red);
+}
+.row em {
+  font-style: normal;
+  font-size: 22px;
+  color: var(--muted);
+}
+.row .st {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+}
+/* the transaction on the left shares its line with "Spent today"; the meter sits under that alone */
+.tx {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 26px;
+  padding-top: 26px;
+  border-top: 1.5px solid var(--line);
+  font-size: 22px;
+}
+.spend {
+  display: grid;
+  gap: 12px;
+  width: 320px;
+}
+.spend-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.spend-h b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ 3. the approval, 4. the stop */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px 32px;
+}
+.status-t {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+}
+.status-t b {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.status-t span {
+  font-size: 23px;
+  color: var(--muted);
+}
+/* the approval waiting on you carries a pink rule instead of the grey one */
+.appr {
+  border-color: var(--pink-line);
+}
+.flags {
+  display: flex;
+  gap: 12px;
+  margin: 26px 0 22px;
+}
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 18px;
+  border: 1.5px solid var(--pink-line);
+  border-radius: 12px;
+  background: var(--pink);
+  color: var(--red);
+  font-size: 21px;
+  font-weight: 600;
+}
+.appr-f {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28px;
+  padding-top: 26px;
+  border-top: 1.5px solid var(--line);
+}
+.appr-f > span {
+  font-size: 22px;
+  color: var(--muted);
+}
+.actions {
+  display: flex;
+  gap: 14px;
+}
+.toast {
+  position: absolute;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 76px;
+  padding: 0 34px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 25px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+.toast-sq {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--red);
+}
+/* the three cards share rows: label, a 76 px slot (figure, figure and meter, or the button), then the note */
+.stat {
+  display: grid;
+  grid-template-rows: auto 76px auto;
+  align-content: start;
+  row-gap: 24px;
+  padding: 30px 32px;
+}
+.stat .slot {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.stat .big {
+  /* lifts the figure so its cap tops sit on the slot's top edge, level with the button's */
+  margin-top: -8px;
+  font-size: 58px;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+.stat .small {
+  font-size: 21px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.killbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  height: 76px;
+  border-radius: 16px;
+  background: var(--red);
+  color: #fff;
+  font-size: 27px;
+  font-weight: 600;
+}
+.live {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: var(--ink);
+}
+.agent {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 28px;
+}
+.agent .op-t b {
+  font-size: 27px;
+}
+.shade {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.32);
+}
+.modal {
+  padding: 40px 42px;
+}
+.mrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 70px;
+  padding: 0 24px;
+  margin-top: 10px;
+  border-radius: 14px;
+  background: var(--soft);
+  font-size: 24px;
+  font-weight: 600;
+}
+.mrow em {
+  font-style: normal;
+  font-size: 21px;
+  color: var(--muted);
+}
+.mrow.off {
+  background: var(--pink);
+}
+.mrow.off em {
+  color: var(--red);
+}
+
+/* ------------------------------------------------------------------ the end */
+.lockup {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: flex-end;
+  gap: 22px;
+  transform: translate(-50%, -50%);
+}
+/* the header's lockup at 70 px cap height: mark 1.43 em, gap 0.44 em */
+.lockup {
+  gap: 31px;
+}
+.lockup .end-mark {
+  height: 100px;
+  width: auto;
+  fill: var(--ink);
+}
+.lockup .end-word {
+  height: 70px;
+  width: auto;
+  fill: var(--ink);
+}
+/* the brand mark used as the power icon */
+.film-mark {
+  width: 100%;
+  height: auto;
+  fill: currentColor;
+}
+
+/* ------------------------------------------------------------------ the pointer */
+.cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 46px;
+  height: 46px;
+  pointer-events: none;
+}
+.ring {
+  position: absolute;
+  border: 3px solid var(--red);
+  border-radius: 50%;
+}

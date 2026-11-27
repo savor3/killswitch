@@ -1,0 +1,369 @@
+/* Type, colour and shared parts. Sizes follow the reference at a 1905 px wide window and scale with it. */
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/geist-mono-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --black: #000;
+  --white: #fff;
+  --red: #ff2028;
+  --red-deep: #b0000e;
+  --red-soft: #ff8a8e;
+  --sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --gutter: clamp(16px, 1.575vw, 30px);
+  --hdr-h: clamp(64px, 4.04vw, 77px);
+  /* motion: --ease for things arriving (reveals), --ease-out for hover and state changes (fast start, soft
+     stop), --ease-io for things that move across the screen while visible */
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-io: cubic-bezier(0.76, 0, 0.24, 1);
+  --t-hover: 180ms;
+  --t-state: 240ms;
+
+  --t-h1: clamp(40px, 4.2vw, 80px);
+  --t-h2: clamp(32px, 2.94vw, 56px);
+  --t-sub: clamp(24px, 1.89vw, 36px);
+  --t-lead: clamp(18px, 1.155vw, 22px);
+  --t-stat: clamp(48px, 3.72vw, 71px);
+  --t-cap: clamp(17px, 1.16vw, 22px);
+  --t-nav: clamp(13px, 0.77vw, 15px);
+  --t-btn: clamp(12.5px, 0.72vw, 14px);
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--white);
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  color: var(--black);
+  font: 400 16px/1.5 var(--sans);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+html.is-loading,
+html.is-menu {
+  overflow: hidden;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+svg,
+canvas {
+  display: block;
+}
+::selection {
+  background: var(--red);
+  color: var(--white);
+}
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 3px;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  background: var(--white);
+}
+
+/* ------------------------------------------------------------------ type */
+/* headings break into lines of even length; paragraphs never leave one word alone on their last line */
+h1,
+h2,
+h3,
+.sub,
+.stat-cap,
+.scard-title {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+/* the line breaks written into headings are for wide screens; on narrow ones the words flow */
+@media (max-width: 760px) {
+  .wr br {
+    display: none;
+  }
+}
+.h2 {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.sub {
+  margin: 0;
+  font-size: var(--t-sub);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+/* ------------------------------------------------------------------ pills */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.714em;
+  padding: 0 0.857em;
+  border-radius: 9999px;
+  font-size: var(--t-btn);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  transition:
+    background-color var(--t-hover) var(--ease-out),
+    color var(--t-hover) var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+/* pressed: a small give under the finger, released at once */
+.pill:active {
+  transform: scale(0.97);
+}
+.pill-black {
+  background: var(--black);
+  color: var(--white);
+}
+.pill-black:hover {
+  background: var(--red);
+}
+.pill-grey {
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--black);
+}
+.pill-grey:hover {
+  background: rgba(0, 0, 0, 0.32);
+}
+.pill-white {
+  background: var(--white);
+  color: var(--black);
+}
+.pill-white:hover {
+  background: var(--red);
+  color: var(--white);
+}
+.pill-ghost {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--white);
+}
+
+/* a square button in two parts, the label and an arrow cell behind a dashed rule; on hover the arrow
+   leaves to the right and comes back in from the left */
+.sbtn {
+  display: inline-flex;
+  align-items: stretch;
+  height: 40px;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    background-color var(--t-hover) var(--ease-out),
+    color var(--t-hover) var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+.sbtn:active {
+  transform: scale(0.97);
+}
+.sbtn > span {
+  display: grid;
+  place-items: center;
+  padding: 0 14px;
+}
+.sbtn > i {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  overflow: hidden;
+  border-left: 1px dashed color-mix(in srgb, currentColor 40%, transparent);
+  font-style: normal;
+}
+.sbtn > i b {
+  font: 500 15px/1 var(--sans);
+}
+.sbtn:hover > i b {
+  animation: sbtn-arrow 560ms var(--ease-out);
+}
+@keyframes sbtn-arrow {
+  45% {
+    transform: translateX(160%);
+  }
+  46% {
+    transform: translateX(-160%);
+  }
+}
+.sbtn-red {
+  background: var(--red);
+  color: var(--white);
+}
+.sbtn-red:hover {
+  background: #e3000c;
+}
+.sbtn-ink {
+  background: var(--black);
+  color: var(--white);
+}
+.sbtn-ink:hover {
+  background: #262626;
+}
+.sbtn-ink > i {
+  border-left: 0;
+  background: var(--red);
+}
+.sbtn-grey {
+  background: #efefef;
+  color: var(--black);
+}
+.sbtn-grey:hover {
+  background: #e3e3e3;
+}
+.sbtn-dark {
+  background: #232323;
+  color: var(--white);
+}
+.sbtn-dark:hover {
+  background: #333;
+}
+/* on a picture: a see-through button with a hairline, no blur (a blur over a moving picture costs every frame) */
+.sbtn-glass {
+  background: rgba(10, 10, 10, 0.55);
+  color: var(--white);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+.sbtn-glass:hover {
+  background: rgba(40, 40, 40, 0.75);
+}
+/* an arrow that points down leaves downwards and comes back from above */
+.sbtn-down:hover > i b {
+  animation-name: sbtn-arrow-down;
+}
+@keyframes sbtn-arrow-down {
+  45% {
+    transform: translateY(160%);
+  }
+  46% {
+    transform: translateY(-160%);
+  }
+}
+
+/* ------------------------------------------------------------------ scroll choreography (lib/reveal.ts) */
+/* an element marked data-rv comes into place as it scrolls into view; --rv-i makes neighbours follow one
+   another */
+[data-rv="up"],
+[data-rv="fade"],
+[data-rv="scale"] {
+  opacity: 0;
+  transition:
+    opacity 0.9s var(--ease) calc(var(--rv-i, 0) * 90ms),
+    transform 1.2s var(--ease) calc(var(--rv-i, 0) * 90ms);
+}
+[data-rv="up"] {
+  transform: translate3d(0, 36px, 0);
+}
+[data-rv="scale"] {
+  transform: translate3d(0, 24px, 0) scale(0.965);
+}
+[data-rv][data-in] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-rv] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ word reveal */
+.wr [data-w] {
+  transition: color 0.45s var(--ease), opacity 0.45s var(--ease);
+}
+.wr [data-s="0"] {
+  opacity: 0;
+}
+.wr [data-s="1"],
+.wr .wr-a[data-s="2"] {
+  color: var(--red);
+}
+
+/* a card's photograph, under everything else in the card */
+.card-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+/* the squares that follow the pointer (PixelTrail): over the picture, under the words */
+.trail {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* the red square that marks things, like a status light */
+.px {
+  position: absolute;
+  width: clamp(10px, 0.73vw, 14px);
+  aspect-ratio: 1;
+  background: var(--red);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
