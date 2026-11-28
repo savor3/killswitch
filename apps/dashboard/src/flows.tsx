@@ -268,24 +268,28 @@ function Connect({ app, open, c: cNow, onClose }: { app: App; open: boolean; c: 
   // Claude Code and Claude Desktop on Windows start `npx` through cmd (npx is a .cmd script there)
   const stdio = isWin ? { command: "cmd", args: ["/c", "npx", ...NPX_ARGS] } : { command: "npx", args: NPX_ARGS };
   const plain = { command: "npx", args: NPX_ARGS };
+  // Each agent gets its own connection name, so several agents (even two of the same kind) live side by side in one
+  // AI app; connecting the same agent again replaces its own entry. e.g. "Trading bot" 0x0e56… → killswitch-trading-bot-0e56
+  const slug = c.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24).replace(/-+$/, "") || "agent";
+  const name = `killswitch-${slug}-${c.agentId.slice(2, 6).toLowerCase()}`;
   const cursorLink = (k: string) =>
-    `cursor://anysphere.cursor-deeplink/mcp/install?name=killswitch-wallet&config=${btoa(JSON.stringify({ ...plain, env: envObj(k) }))}`;
+    `cursor://anysphere.cursor-deeplink/mcp/install?name=${encodeURIComponent(name)}&config=${btoa(JSON.stringify({ ...plain, env: envObj(k) }))}`;
   const vscodeLink = (k: string) =>
-    `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name: "killswitch-wallet", type: "stdio", ...plain, env: envObj(k) }))}`;
+    `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name, type: "stdio", ...plain, env: envObj(k) }))}`;
   const snippets: Record<ConnectTab, (k: string) => string> = {
     code: (k) => viaWsl
-      ? `claude mcp add killswitch-wallet -- wsl ${wslArgs(k).map((a) => (/\s/.test(a) ? `"${a}"` : a)).join(" ")}`
-      // an older killswitch-wallet (this folder's or everyone's) would shadow the new one: clear both first, quietly
-      : `${["user", "local"].map((s) => `claude mcp remove killswitch-wallet --scope ${s} ${isWin ? "2>$null" : "2>/dev/null"}`).join("; ")}; claude mcp add killswitch-wallet --scope user ${envFlags(k)} -- ${isWin ? "cmd /c npx" : "npx"} ${npx}; claude "check my wallet"`,
-    desktop: (k) => JSON.stringify({ mcpServers: { "killswitch-wallet": viaWsl ? { command: "wsl", args: wslArgs(k) } : { ...stdio, env: envObj(k) } } }, null, 2),
-    cursor: (k) => JSON.stringify({ mcpServers: { "killswitch-wallet": { ...plain, env: envObj(k) } } }, null, 2),
-    vscode: (k) => JSON.stringify({ servers: { "killswitch-wallet": { type: "stdio", ...plain, env: envObj(k) } } }, null, 2),
-    codex: (k) => `codex mcp add killswitch-wallet ${envPairs.map(([n, v]) => `--env ${n}=${n === "KS_SESSION_KEY" ? k : v}`).join(" ")} -- npx ${npx}`,
-    other: (k) => JSON.stringify({ mcpServers: { "killswitch-wallet": { ...plain, env: envObj(k) } } }, null, 2),
+      ? `claude mcp add ${name} -- wsl ${wslArgs(k).map((a) => (/\s/.test(a) ? `"${a}"` : a)).join(" ")}`
+      // an older entry for this same agent (this folder's or everyone's) would shadow the new one: clear both first, quietly
+      : `${["user", "local"].map((s) => `claude mcp remove ${name} --scope ${s} ${isWin ? "2>$null" : "2>/dev/null"}`).join("; ")}; claude mcp add ${name} --scope user ${envFlags(k)} -- ${isWin ? "cmd /c npx" : "npx"} ${npx}; claude "check my wallet with ${name}"`,
+    desktop: (k) => JSON.stringify({ mcpServers: { [name]: viaWsl ? { command: "wsl", args: wslArgs(k) } : { ...stdio, env: envObj(k) } } }, null, 2),
+    cursor: (k) => JSON.stringify({ mcpServers: { [name]: { ...plain, env: envObj(k) } } }, null, 2),
+    vscode: (k) => JSON.stringify({ servers: { [name]: { type: "stdio", ...plain, env: envObj(k) } } }, null, 2),
+    codex: (k) => `codex mcp add ${name} ${envPairs.map(([n, v]) => `--env ${n}=${n === "KS_SESSION_KEY" ? k : v}`).join(" ")} -- npx ${npx}`,
+    other: (k) => JSON.stringify({ mcpServers: { [name]: { ...plain, env: envObj(k) } } }, null, 2),
     sdk: (k) => envPairs.map(([n, v]) => `${n}=${n === "KS_SESSION_KEY" ? k : v}`).join("\n"),
   };
   const help: Record<ConnectTab, string> = {
-    code: "One line: paste it in your terminal. It replaces any older Killswitch connection, adds this agent for every folder, and opens Claude on your wallet's status.",
+    code: "One line: paste it in your terminal. It adds this agent for every folder under its own name, so it sits beside your other agents, and opens Claude on your wallet's status.",
     desktop: "Paste into Claude Desktop → Settings → Developer → Edit config, save, then quit and reopen Claude. Ask: “check my wallet”.",
     cursor: "Click Add to Cursor and confirm in Cursor. Or paste the JSON into ~/.cursor/mcp.json.",
     vscode: "Click Install in VS Code and confirm (GitHub Copilot agent mode). Or paste the JSON into .vscode/mcp.json.",
