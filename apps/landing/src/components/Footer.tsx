@@ -4,8 +4,10 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { WORDMARK } from "../brand/brand-geometry";
 import { Mark } from "../brand/Logo";
-import { APP_URL, GITHUB_URL, WHITEPAPER_URL } from "../config";
+import { APP_URL, DOCS_URL, GITHUB_URL, PRESALE_URL, WHITEPAPER_URL } from "../config";
+import { goToApp } from "../lib/launch";
 import { useInView } from "../lib/motion";
+import { homeLink, usePath } from "../site/where";
 import { DitherField } from "./DitherField";
 import { WordReveal } from "./WordReveal";
 
@@ -14,6 +16,8 @@ const OUTLINES = WORDMARK.path.split(/(?=M)/);
 const LETTERS = [OUTLINES.slice(0, 3).join(""), ...OUTLINES.slice(3)];
 
 export function Footer() {
+  const path = usePath();
+  const at = (hash: string) => homeLink(path, hash);
   const word = useRef<HTMLDivElement>(null);
   const seen = useInView(word, 0.35);
   const [up, setUp] = useState(false);
@@ -40,16 +44,16 @@ export function Footer() {
             Give each agent a budget, not your keys. Open source, on the Base Sepolia test network.
           </p>
           <div className="ftr-cta" data-rv="up" style={{ "--rv-i": 1 } as CSSProperties}>
-            <a className="sbtn sbtn-red" href={APP_URL} target="_blank" rel="noopener">
+            <a className="sbtn sbtn-red" href={APP_URL} onClick={goToApp}>
               <span>Launch App</span>
               <i aria-hidden="true">
                 <b>→</b>
               </i>
             </a>
-            <a className="sbtn sbtn-dark" href={WHITEPAPER_URL} target="_blank" rel="noopener">
-              <span>Read the Whitepaper</span>
+            <a className="sbtn sbtn-dark" href={DOCS_URL}>
+              <span>Read the Docs</span>
               <i aria-hidden="true">
-                <b>↗</b>
+                <b>→</b>
               </i>
             </a>
           </div>
@@ -57,36 +61,39 @@ export function Footer() {
       </section>
 
       <div className="ftr-grid">
-        <a className="ftr-brand" href="#top" aria-label="Killswitch, back to top" data-rv="up">
+        <a className="ftr-brand" href={path === "/" ? "#top" : "/"} aria-label={path === "/" ? "Killswitch, back to top" : "Killswitch home"} data-rv="up">
           <Mark />
         </a>
         <nav aria-label="Product" data-rv="up" style={{ "--rv-i": 1 } as CSSProperties}>
           <h3>Product</h3>
-          <a href="#how">How It Works</a>
-          <a href="#security">Security</a>
-          <a href="#developers">Developers</a>
-          <a href="#token">$KILL</a>
+          <a href={at("#how")}>How It Works</a>
+          <a href={at("#security")}>Security</a>
+          <a href={at("#developers")}>Developers</a>
+          <a href={PRESALE_URL}>$KILL Pre-sale</a>
         </nav>
-        <nav aria-label="Use it" data-rv="up" style={{ "--rv-i": 2 } as CSSProperties}>
-          <h3>Use It</h3>
-          <a href={APP_URL} target="_blank" rel="noopener">
+        <nav aria-label="Resources" data-rv="up" style={{ "--rv-i": 2 } as CSSProperties}>
+          <h3>Resources</h3>
+          <a href={APP_URL} onClick={goToApp}>
             Launch App
           </a>
+          <a href={DOCS_URL}>Docs</a>
           <a href={WHITEPAPER_URL} target="_blank" rel="noopener">
             Whitepaper
           </a>
-        </nav>
-        <nav aria-label="Code" data-rv="up" style={{ "--rv-i": 3 } as CSSProperties}>
-          <h3>Code</h3>
           <a href={GITHUB_URL} target="_blank" rel="noopener">
             GitHub
           </a>
+        </nav>
+        <nav aria-label="Legal" data-rv="up" style={{ "--rv-i": 3 } as CSSProperties}>
+          <h3>Legal</h3>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms of Use</a>
           <a href={`${GITHUB_URL}/blob/main/LICENSE`} target="_blank" rel="noopener">
             MIT License
           </a>
           <p className="ftr-note">
             Killswitch runs on the Base Sepolia test network and has not been audited yet. Do not use it with real funds.
-            Nothing on this page is financial advice.
+            Nothing on this site is financial advice.
           </p>
         </nav>
       </div>

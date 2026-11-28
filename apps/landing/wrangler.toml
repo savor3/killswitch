@@ -3,3 +3,7 @@ compatibility_date = "2026-11-01"
 
 [assets]
 directory = "./dist"
+# /presale serves presale.html and /docs/sdk serves docs/sdk.html; an address with no file gets 404.html,
+# with a 404 status
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"

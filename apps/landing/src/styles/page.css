@@ -1,0 +1,449 @@
+/* ------------------------------------------------------------------ the pages beside the home page */
+/* Shared by the pre-sale, docs, legal and 404 pages: blocks on the home page's 1240 px column and rhythm,
+   statement headings, hairline lists and tables, and the long-form text of the docs and legal pages. */
+.pg {
+  --line: rgba(0, 0, 0, 0.12);
+  --muted: rgba(0, 0, 0, 0.55);
+  --soft: rgba(0, 0, 0, 0.68);
+  --red-text: #d10e18; /* the brand red, a step deeper, for small words on white */
+}
+.pg-dark {
+  --line: rgba(255, 255, 255, 0.14);
+  --muted: rgba(255, 255, 255, 0.5);
+  --soft: rgba(255, 255, 255, 0.66);
+  --red-text: #ff5c62;
+}
+
+.pg-block {
+  padding: clamp(96px, 7.5vw, 144px) var(--gutter) 0;
+}
+.pg-block:last-child {
+  padding-bottom: clamp(96px, 7.5vw, 144px);
+}
+.pg-dark {
+  margin-top: clamp(96px, 7.5vw, 144px);
+  padding: clamp(72px, 6vw, 112px) var(--gutter);
+  background: var(--black);
+  color: var(--white);
+}
+.pg-in {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+}
+.pg-head {
+  display: grid;
+  justify-items: start;
+  gap: 18px;
+  max-width: 820px;
+  margin-bottom: clamp(40px, 3.4vw, 64px);
+}
+.pg-dark .eyebrow {
+  color: rgba(255, 255, 255, 0.82);
+}
+.pg-h2 {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.pg-lead {
+  margin: 0;
+  max-width: 36em;
+  font-size: var(--t-lead);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--soft);
+}
+.pg-note {
+  margin: 22px 0 0;
+  max-width: 62em;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.pg-note a,
+.pg-link {
+  color: inherit;
+  border-bottom: 1px solid var(--red);
+  transition: color var(--t-hover) var(--ease-out);
+}
+.pg-note a:hover,
+.pg-link:hover {
+  color: var(--red-text);
+}
+.pg-notice {
+  width: min(1240px, 100%);
+  margin: clamp(64px, 5vw, 96px) auto 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* the state square, as in the web app: solid red, ticking once a second while something is counting down */
+.sq {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: var(--red);
+}
+.sq.is-tick {
+  animation: sq-tick 1s steps(1, end) infinite;
+}
+@keyframes sq-tick {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* a square button that is a <button> */
+button.sbtn {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+.sbtn-wait {
+  background: #232323;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------ hairline lists */
+.kv {
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.kv > div {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.42fr) minmax(0, 1fr);
+  gap: 6px 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.kv dt {
+  padding-top: 4px;
+  font: 500 11.5px/1.35 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.kv dd {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.38;
+  letter-spacing: -0.015em;
+}
+.kv-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 clamp(24px, 3vw, 56px);
+  border-top: 0;
+}
+.kv-3 > div {
+  display: block;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+.kv-3 dd {
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+/* ------------------------------------------------------------------ tables */
+.table {
+  overflow-x: auto;
+  border-top: 1px solid var(--line);
+}
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.table th,
+.table td {
+  padding: 14px 20px 14px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.table th:last-child,
+.table td:last-child {
+  padding-right: 0;
+}
+.table thead th {
+  padding-top: 13px;
+  padding-bottom: 13px;
+  font: 500 11.5px/1.2 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.table tbody th {
+  font-weight: 600;
+}
+.table td {
+  color: var(--soft);
+}
+/* on a phone a table can become a list: each row a block, each cell under its column's name */
+@media (max-width: 640px) {
+  .table.is-stack thead {
+    display: none;
+  }
+  .table.is-stack tr {
+    display: grid;
+    gap: 8px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .table.is-stack th,
+  .table.is-stack td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+  .table.is-stack td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font: 500 10.5px/1.3 var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+}
+
+/* ------------------------------------------------------------------ long-form text (docs, legal) */
+.prose {
+  font-size: 17px;
+  line-height: 1.65;
+  letter-spacing: -0.006em;
+  color: rgba(0, 0, 0, 0.8);
+}
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose h2,
+.prose h3 {
+  color: var(--black);
+  scroll-margin-top: calc(var(--hdr-h) + 28px);
+}
+.prose h2 {
+  margin: 2.3em 0 0.65em;
+  font-size: clamp(25px, 1.75vw, 32px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+.prose h3 {
+  margin: 1.9em 0 0.5em;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0 0 1.05em;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.25em;
+}
+.prose ul {
+  list-style: square;
+}
+.prose li + li {
+  margin-top: 0.35em;
+}
+.prose ul li::marker {
+  color: var(--red);
+}
+.prose ol li::marker {
+  font: 500 0.82em var(--mono);
+  color: var(--muted);
+}
+.prose strong {
+  font-weight: 600;
+  color: var(--black);
+}
+.prose a {
+  color: var(--black);
+  text-decoration: underline;
+  text-decoration-color: var(--red);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color var(--t-hover) var(--ease-out);
+}
+.prose a:hover {
+  color: var(--red-text);
+}
+.prose :not(pre) > code {
+  padding: 0.1em 0.34em;
+  background: #f0f0ee;
+  font: 500 0.84em/1 var(--mono);
+  color: var(--black);
+  overflow-wrap: anywhere;
+}
+.prose hr {
+  margin: 2.4em 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+/* a heading is a link to itself: a red square shows beside it under the pointer */
+.prose .h-link {
+  position: relative;
+  color: inherit;
+  text-decoration: none;
+}
+.prose .h-link::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 0.5em;
+  width: 8px;
+  height: 8px;
+  margin-top: -3px;
+  background: var(--red);
+  opacity: 0;
+  transition: opacity var(--t-hover) var(--ease-out);
+}
+.prose .h-link:hover {
+  color: inherit;
+}
+.prose .h-link:hover::before {
+  opacity: 1;
+}
+.prose .table {
+  margin: 1.5em 0 1.7em;
+}
+.prose .table table {
+  font-size: 15px;
+}
+.prose .table td {
+  color: rgba(0, 0, 0, 0.74);
+}
+.prose .table code {
+  white-space: nowrap;
+}
+.prose .note {
+  margin: 1.6em 0;
+  padding: 18px 22px;
+  border-left: 2px solid var(--red);
+  background: #f5f5f3;
+}
+.prose .note > :last-child {
+  margin-bottom: 0;
+}
+
+/* code: the landing's code window, with a copy button */
+.code {
+  margin: 1.5em 0 1.7em;
+  background: #0d0d0d;
+  color: rgba(255, 255, 255, 0.86);
+}
+.code-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 40px;
+  padding: 0 7px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.code-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--t-hover) var(--ease-out),
+    color var(--t-hover) var(--ease-out);
+}
+.code-copy:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--white);
+}
+.code-copy.is-done::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--red);
+}
+.code pre {
+  margin: 0;
+  padding: 18px 18px 20px 16px;
+  overflow-x: auto;
+  font: 400 13.5px/1.7 var(--mono);
+  tab-size: 2;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.code code {
+  font: inherit;
+}
+/* the token colours of the home page's code window */
+.code .t-k {
+  color: var(--white);
+  font-weight: 600;
+}
+.code .t-s {
+  color: #ff5c62;
+}
+.code .t-c {
+  color: rgba(255, 255, 255, 0.4);
+}
+.code .t-f {
+  color: var(--white);
+}
+
+@media (max-width: 760px) {
+  .pg-block {
+    padding-top: 88px;
+  }
+  .pg-dark {
+    margin-top: 88px;
+    padding-top: 64px;
+    padding-bottom: 64px;
+  }
+  .kv > div {
+    grid-template-columns: 1fr;
+  }
+  .kv-3 {
+    grid-template-columns: 1fr;
+  }
+  .kv-3 > div {
+    padding-bottom: 18px;
+  }
+  .prose {
+    font-size: 16px;
+  }
+  .code pre {
+    font-size: 12.5px;
+  }
+}

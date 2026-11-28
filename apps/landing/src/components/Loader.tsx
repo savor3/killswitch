@@ -13,15 +13,16 @@ const BLINK_MS = 600;
 // the square goes out
 const HOLD_MS = 100;
 
-export function Loader({ onReveal }: { onReveal: () => void }) {
-  const [phase, setPhase] = useState<"scan" | "blink" | "wipe" | "done">("scan");
+/** `skip`: show the page at once (the opening has already played this visit). */
+export function Loader({ onReveal, skip = false }: { onReveal: () => void; skip?: boolean }) {
+  const [phase, setPhase] = useState<"scan" | "blink" | "wipe" | "done">(skip ? "done" : "scan");
   const [lit, setLit] = useState(-1);
   const [px, setPx] = useState<{ x: number; w: number } | null>(null);
   const word = useRef<HTMLSpanElement>(null);
   const boxes = useRef<{ x: number; w: number }[]>([]);
 
   useLayoutEffect(() => {
-    if (reduceMotion()) {
+    if (skip || reduceMotion()) {
       onReveal();
       setPhase("done");
       return;

@@ -8,6 +8,7 @@ import signals from "../assets/media/card-signals.webp";
 import trackS from "../assets/media/card-track-640.webp";
 import track from "../assets/media/card-track.webp";
 import { APP_URL } from "../config";
+import { goToApp } from "../lib/launch";
 import { reduceMotion, useScrollFrame } from "../lib/motion";
 import { HeroPixel } from "./HeroPixel";
 import { PixelTrail } from "./PixelTrail";
@@ -64,7 +65,7 @@ export function Hero() {
             Limits it can&rsquo;t cross. One switch to stop every agent.
           </p>
           <div className="hero-cta" style={{ "--d": 2 } as CSSProperties}>
-            <a className="sbtn sbtn-red" href={APP_URL} target="_blank" rel="noopener">
+            <a className="sbtn sbtn-red" href={APP_URL} onClick={goToApp}>
               <span>Launch App</span>
               <i aria-hidden="true">
                 <b>→</b>

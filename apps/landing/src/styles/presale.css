@@ -1,0 +1,1011 @@
+/* ------------------------------------------------------------------ the pre-sale page */
+/* three parts: the top (what is sold, how far the sale has got, and the card to buy with), who has committed,
+   and where the money goes */
+
+/* the top: a black panel on the white page; the words and the bar on the left, the card on the right */
+.sale-hero {
+  padding: 0 var(--gutter);
+}
+.sale-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 432px);
+  align-items: stretch;
+  gap: clamp(36px, 4.4vw, 88px);
+  padding: clamp(44px, 4.6vw, 88px) clamp(20px, 3vw, 56px) clamp(30px, 2.6vw, 48px);
+  background: rgb(16, 12, 12); /* the ground under the aurora's squares, as on the home page's hero */
+  color: var(--white);
+  overflow: hidden;
+  isolation: isolate;
+}
+/* the aurora fills the panel and fades up once drawn; the pointer's squares (.trail) sit over it, the words and
+   the card over both */
+.sale-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+/* the canvas must be sized by its box (it sizes its pixels from it), here as on the home page's hero.css */
+.sale-art .hero-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: sale-art-in 1.8s var(--ease) 0.1s both;
+}
+@keyframes sale-art-in {
+  from {
+    opacity: 0;
+  }
+}
+.sale-main,
+.sale-copy,
+.sale-cta,
+.sale-main > .presale,
+.buy {
+  position: relative;
+  z-index: 2;
+}
+/* a soft dark pool under the words keeps them clear of the light */
+.sale-copy::before {
+  content: "";
+  position: absolute;
+  inset: -40% -30% -40% -20%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(10, 6, 6, 0.7), rgba(10, 6, 6, 0));
+  pointer-events: none;
+}
+.sale-panel::after {
+  /* the red square in the corner, as on the home page's black sections */
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  width: clamp(10px, 0.73vw, 14px);
+  aspect-ratio: 1;
+  background: var(--red);
+}
+.sale-main {
+  display: grid;
+  align-content: space-between;
+  gap: clamp(30px, 2.6vw, 48px);
+  min-width: 0;
+}
+.sale-copy {
+  display: grid;
+  justify-items: start;
+  gap: 22px;
+  max-width: 820px;
+}
+.sale-copy .eyebrow {
+  color: rgba(255, 255, 255, 0.82);
+}
+.sale-h1 {
+  margin: 0;
+  font-size: var(--t-h1);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+.sale-lead {
+  margin: 0;
+  max-width: 28em;
+  font-size: var(--t-lead);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: rgba(255, 255, 255, 0.66);
+}
+/* the parts arrive one after another on load (CSS only, so the prerendered page needs no script for it) */
+.sale-copy > *,
+.sale-cta,
+.sale-main > .presale,
+.buy {
+  animation: sale-in 0.9s var(--ease) both;
+}
+.sale-copy > :nth-child(2) {
+  animation-delay: 60ms;
+}
+.sale-copy > :nth-child(3) {
+  animation-delay: 120ms;
+}
+.buy {
+  animation-delay: 160ms;
+}
+.sale-cta {
+  animation-delay: 220ms;
+}
+.sale-main > .presale {
+  animation-delay: 280ms;
+}
+@keyframes sale-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+}
+.sale-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 14px;
+}
+.sale-cal {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  transition:
+    color var(--t-hover) var(--ease-out),
+    border-color var(--t-hover) var(--ease-out);
+}
+.sale-cal:hover {
+  color: var(--white);
+  border-color: var(--red);
+}
+.sale-cal + .sbtn {
+  margin-left: 10px;
+}
+
+/* ------------------------------------------------------------------ the card to buy with (BuyCard.tsx) */
+/* after the presale cards people know: the time and the price on top, the round, what you pay and what you
+   get, one button, and what stands behind the sale; in the site's own hairlines, mono labels and red */
+.buy {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
+  padding: 22px 22px 20px;
+  background: #0b0b0b;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.buy-k {
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.buy-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.buy-top > div {
+  display: grid;
+  gap: 10px;
+}
+.buy-top > div + div {
+  justify-items: end;
+  text-align: right;
+}
+.buy-clock {
+  font: 500 15px/1 var(--mono);
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.buy-clock b {
+  margin-right: 1px;
+  font-weight: 600;
+  color: var(--white);
+}
+.buy-clock.is-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 15px/1 var(--sans);
+  color: var(--white);
+}
+.buy-price b {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+.buy-state {
+  display: grid;
+  gap: 6px;
+}
+.buy-state b {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.buy-state p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
+}
+/* the first trading pool's price, the one figure after the sale the whitepaper sets */
+.buy-pool {
+  display: grid;
+  gap: 6px;
+  padding: 13px 14px 14px;
+  background: rgba(255, 32, 40, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 32, 40, 0.42);
+}
+.buy-pool span {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.72);
+}
+.buy-pool b {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #ff5a60;
+}
+.buy-pool small {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+.buy-cur {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 2), minmax(0, 1fr));
+  gap: 3px;
+  padding: 3px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.buy-cur button {
+  height: 34px;
+  border: 0;
+  background: transparent;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition:
+    background-color var(--t-hover) var(--ease-out),
+    color var(--t-hover) var(--ease-out);
+}
+.buy-cur button:hover {
+  color: var(--white);
+}
+.buy-cur button[aria-checked="true"] {
+  background: #222;
+  color: var(--white);
+}
+.buy-form {
+  display: grid;
+  gap: 8px;
+}
+.buy-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.buy-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 58px;
+  padding: 0 10px 0 14px;
+  background: #000;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  transition: box-shadow var(--t-hover) var(--ease-out);
+}
+.buy-field:focus-within {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+.buy-field.is-bad {
+  box-shadow: inset 0 0 0 1px var(--red);
+}
+.buy-field input,
+.buy-field output {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--white);
+  font: 600 24px/1 var(--sans);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+.buy-field input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+.buy-field output {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.buy-field output.is-none {
+  color: rgba(255, 255, 255, 0.3);
+}
+.buy-coin {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px;
+  background: #1a1a1a;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.04em;
+}
+.buy-coin svg {
+  display: block;
+  width: 15px;
+  height: auto;
+  fill: currentColor;
+}
+.buy-quick {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.buy-quick button {
+  height: 32px;
+  border: 0;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  font: 500 12px/1 var(--mono);
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+  transition:
+    box-shadow var(--t-hover) var(--ease-out),
+    background-color var(--t-hover) var(--ease-out),
+    color var(--t-hover) var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+.buy-quick button:hover {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+  color: var(--white);
+}
+.buy-quick button:active {
+  transform: scale(0.96);
+}
+.buy-quick button[aria-pressed="true"] {
+  background: var(--white);
+  box-shadow: none;
+  color: var(--black);
+}
+.buy-swap {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 30px;
+  height: 30px;
+  margin: 4px 0 -2px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  font: 500 14px/1 var(--sans);
+  color: rgba(255, 255, 255, 0.6);
+}
+.buy-msg {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #ff6b70;
+}
+.buy-msg:empty {
+  display: none;
+}
+.buy-msg .sq {
+  width: 7px;
+  height: 7px;
+  transform: translateY(-1px);
+}
+/* the one button: connect, then (once the sale is open) on to the sale; full width, label on the left */
+.buy-go {
+  width: 100%;
+  height: 50px;
+  margin-top: 6px;
+}
+.buy-go > span {
+  flex: 1;
+  place-items: center start;
+  padding-left: 18px;
+}
+.buy-go.sbtn-wait {
+  justify-content: center;
+}
+.buy-go.sbtn-wait > span {
+  place-items: center;
+  padding-left: 14px;
+}
+.buy-wallet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  font: 500 12.5px/1 var(--mono);
+  color: rgba(255, 255, 255, 0.82);
+}
+.buy-wallet .buy-link {
+  margin-left: auto;
+}
+.buy-mine {
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ff5a60;
+}
+.buy-link {
+  padding: 0 0 1px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  background: none;
+  font: 500 12.5px/1.3 var(--sans);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition:
+    color var(--t-hover) var(--ease-out),
+    border-color var(--t-hover) var(--ease-out);
+}
+.buy-link:hover {
+  border-color: var(--red);
+  color: var(--white);
+}
+.buy-facts {
+  display: grid;
+  gap: 10px;
+  margin: 2px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  list-style: none;
+}
+.buy-facts li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.74);
+}
+.buy-facts svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: rgba(255, 255, 255, 0.5);
+}
+.buy-facts a {
+  color: inherit;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  transition: border-color var(--t-hover) var(--ease-out);
+}
+.buy-facts a:hover {
+  border-color: var(--red);
+}
+.buy-fine {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.42);
+}
+.buy-fine a {
+  color: inherit;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* choosing a wallet, in place of the button: every wallet in this browser by its own name and icon */
+.buy-pick {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 12px;
+  background: #000;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  animation: sale-in 0.45s var(--ease) both;
+}
+.buy-pick-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.buy-pick-h b {
+  font-size: 14px;
+  font-weight: 600;
+}
+.buy-pick ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.buy-pick li button {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  padding: 8px 14px 8px 8px;
+  border: 0;
+  background: #121212;
+  box-shadow: inset 0 0 0 1px transparent;
+  color: var(--white);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    box-shadow var(--t-hover) var(--ease-out),
+    opacity 200ms var(--ease-out);
+}
+.buy-pick li button:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+}
+.buy-pick li button.is-at {
+  box-shadow: inset 0 0 0 1px var(--white);
+}
+.buy-pick li button.is-bad,
+.buy-pick li button.is-bad:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1px var(--red);
+}
+.buy-pick li button:disabled {
+  cursor: default;
+}
+.buy-pick li button:disabled:not(.is-at) {
+  opacity: 0.45;
+}
+.buy-pick-ic {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: #1f1f1f;
+}
+.buy-pick-ic img {
+  width: 22px;
+  height: 22px;
+}
+.buy-pick-t {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.buy-pick-t b {
+  font-size: 14px;
+  font-weight: 600;
+}
+.buy-pick-t small {
+  font: 500 10.5px/1 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.buy-pick-t small.is-bad {
+  color: #ff6b70;
+}
+.buy-pick-r {
+  font: 500 14px/1 var(--sans);
+  color: rgba(255, 255, 255, 0.5);
+}
+.buy-pick-look {
+  margin: 0;
+  font: 500 11px/1.4 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.buy-pick-none {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.7);
+}
+.buy-pick-none p {
+  margin: 0;
+}
+.buy-pick-none div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.buy-pick-none a {
+  font-weight: 600;
+  color: var(--white);
+  border-bottom: 1px solid var(--red);
+}
+
+/* ------------------------------------------------------------------ who has committed */
+.who-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.32fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 32px clamp(32px, 4.4vw, 88px);
+}
+.who-grid.is-bare {
+  grid-template-columns: minmax(0, 1fr);
+}
+.who-stats {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.who-stats > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.who-stats dt {
+  font: 500 11.5px/1.3 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.who-stats dd {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.who-stats .who-you {
+  display: grid;
+  justify-content: stretch;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 16px;
+  border: 0;
+  background: var(--black);
+  color: var(--white);
+}
+.who-you dt {
+  color: rgba(255, 255, 255, 0.6);
+}
+.who-you dd {
+  font-size: 17px;
+  text-align: left;
+}
+
+/* the ledger: one row per commitment, its size as a run of red squares */
+.ledger {
+  display: grid;
+  border-top: 1px solid var(--black);
+}
+.ledger-head,
+.ledger-rows li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 0.7fr) 28px;
+  align-items: center;
+  gap: 16px;
+}
+.ledger-head {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ledger-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ledger-rows li {
+  min-height: 54px;
+  padding: 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+  font-weight: 500;
+  animation: led-in 0.6s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+@keyframes led-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+}
+.ledger-rows li.is-mine {
+  background: #f5f5f3;
+  box-shadow: inset 2px 0 0 var(--red);
+}
+.led-sq {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+}
+.led-sq i {
+  width: 9px;
+  height: 9px;
+  background: var(--red);
+}
+.led-sq b {
+  font: 600 12px/1 var(--mono);
+  color: var(--red-text);
+}
+.led-addr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 500 13px/1 var(--mono);
+  letter-spacing: 0.01em;
+}
+.led-addr em {
+  padding: 4px 6px;
+  background: var(--black);
+  color: var(--white);
+  font: 500 10px/1 var(--mono);
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.led-usd {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.led-kill,
+.led-time {
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+}
+.led-time {
+  font-size: 13px;
+}
+.led-tx {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  color: var(--muted);
+  transition:
+    background-color var(--t-hover) var(--ease-out),
+    color var(--t-hover) var(--ease-out);
+}
+a.led-tx:hover {
+  background: #efefef;
+  color: var(--black);
+}
+/* before the record exists: the rows stand empty, their squares grey */
+.ledger-rows.is-blank li {
+  animation: none;
+}
+.ledger-rows.is-blank .led-sq i {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.16);
+}
+/* where the address, the amounts and the time will be: one grey line of squares, a different length a row */
+.ledger-rows.is-blank .led-bar {
+  grid-column: 2 / -1;
+  width: var(--w);
+  height: 9px;
+  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.07) 0 9px, transparent 9px 12px);
+}
+/* loading: the grey squares breathe, one row after another */
+.ledger.is-loading .ledger-rows.is-blank li {
+  animation: led-wait 1.4s var(--ease-out) infinite;
+  animation-delay: calc(var(--i) * 120ms);
+}
+@keyframes led-wait {
+  50% {
+    opacity: 0.45;
+  }
+}
+.ledger-foot {
+  margin: 0;
+  padding: 14px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.ledger-foot:empty {
+  display: none;
+}
+.ledger.is-error .ledger-foot {
+  color: var(--red-text);
+}
+.ledger-more {
+  justify-self: start;
+  margin-top: 14px;
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 1px solid var(--red);
+  background: none;
+  font: 600 13px/1.3 var(--sans);
+  color: var(--black);
+  cursor: pointer;
+}
+.ledger-more:hover {
+  color: var(--red-text);
+}
+
+/* ------------------------------------------------------------------ use of proceeds */
+.proceeds [data-u="audit"] {
+  --c: var(--red);
+}
+.proceeds [data-u="build"] {
+  --c: var(--black);
+}
+.proceeds [data-u="liquidity"] {
+  --c: var(--red-soft);
+}
+.proceeds [data-u="legal"] {
+  --c: #8e8e8e;
+}
+.proceeds [data-u="ops"] {
+  --c: #cdcdcd;
+}
+.proceeds-bar {
+  display: grid;
+  grid-template-columns: repeat(100, minmax(0, 1fr));
+  gap: clamp(2px, 0.21vw, 4px);
+}
+.proceeds-bar i {
+  aspect-ratio: 1;
+  background: var(--c);
+  transition: opacity 220ms var(--ease-out);
+}
+.proceeds-bar.is-picking i:not(.is-pick) {
+  opacity: 0.14;
+}
+.proceeds-uses {
+  display: flex;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.proceeds-uses li {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  flex: var(--w) 1 0;
+  min-width: 0;
+  padding: 16px 18px 0 0;
+  border-top: 1px solid var(--line);
+  transition: border-color var(--t-hover) var(--ease-out);
+}
+.proceeds-uses li.is-pick {
+  border-top-color: var(--black);
+}
+.proceeds-key {
+  width: 10px;
+  height: 10px;
+  background: var(--c);
+}
+.proceeds-uses b {
+  font-size: clamp(22px, 1.75vw, 33px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.proceeds-uses span {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--soft);
+}
+.proceeds-uses small {
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.proceeds .pg-note {
+  margin-top: clamp(28px, 2.4vw, 40px);
+}
+
+/* ------------------------------------------------------------------ smaller screens */
+@media (max-width: 1100px) {
+  /* one column: the words, the card right under them, then the buttons and the bar */
+  .sale-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sale-main {
+    display: contents;
+  }
+  .sale-copy {
+    order: 1;
+  }
+  .buy {
+    order: 2;
+    max-width: 560px;
+  }
+  .sale-cta {
+    order: 3;
+  }
+  .sale-main > .presale {
+    order: 4;
+  }
+  .who-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .sale-panel {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .buy {
+    padding: 18px 16px 16px;
+  }
+  .sale-cal + .sbtn {
+    margin-left: 0;
+  }
+  .ledger-head {
+    display: none;
+  }
+  .ledger-rows li {
+    grid-template-columns: minmax(0, 1fr) auto 28px;
+    grid-template-areas: "sq usd tx" "addr kill tx" "time time tx";
+    gap: 6px 12px;
+    padding: 12px 0;
+  }
+  .ledger-rows li .led-sq {
+    grid-area: sq;
+  }
+  .ledger-rows li .led-addr {
+    grid-area: addr;
+  }
+  .ledger-rows li .led-usd {
+    grid-area: usd;
+    justify-self: end;
+  }
+  .ledger-rows li .led-kill {
+    grid-area: kill;
+    justify-self: end;
+    font-size: 13px;
+  }
+  .ledger-rows li .led-time {
+    grid-area: time;
+  }
+  .ledger-rows li .led-tx {
+    grid-area: tx;
+  }
+  /* an empty row: its grey squares, then one grey line, side by side */
+  .ledger-rows.is-blank li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 48px;
+  }
+  .ledger-rows.is-blank .led-sq {
+    flex: none;
+  }
+  .ledger-rows.is-blank .led-bar {
+    flex: 1;
+    max-width: var(--w);
+  }
+  .proceeds-bar {
+    grid-template-columns: repeat(25, minmax(0, 1fr));
+  }
+  .proceeds-uses {
+    display: grid;
+  }
+  .proceeds-uses li {
+    grid-template-columns: 10px auto 1fr;
+    align-items: baseline;
+    gap: 6px 12px;
+    padding: 14px 0;
+  }
+  .proceeds-uses li span {
+    grid-row: 2;
+    grid-column: 2 / -1;
+  }
+  .proceeds-uses small {
+    grid-row: 1;
+    grid-column: 3;
+    justify-self: end;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sale-copy > *,
+  .sale-cta,
+  .sale-main > .presale,
+  .buy,
+  .buy-pick,
+  .sale-art .hero-canvas {
+    animation: none;
+  }
+}

@@ -779,6 +779,13 @@
 .token-copy p {
   margin: 0;
 }
+.token-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+  margin-top: 8px;
+}
 .token-link {
   width: fit-content;
   border-bottom: 1px solid var(--red);
@@ -824,8 +831,7 @@
   gap: clamp(14px, 1.15vw, 22px);
 }
 .presale-head,
-.presale-nums,
-.presale-scale {
+.presale-nums {
   display: flex;
   justify-content: space-between;
   gap: 16px 24px;
@@ -914,6 +920,24 @@
 .presale-pct.is-some {
   color: var(--white);
 }
+/* after its first count the bar takes a new figure quietly: the new squares just turn red */
+.presale.is-settled .presale-bar i.is-full {
+  animation: none;
+  transition: background-color 0.5s var(--ease-out);
+}
+.presale.is-settled .presale-bar i.is-part::after {
+  transition-delay: 0ms;
+}
+/* the figure waits for its count while scripts run; without them, the bar simply shows what is committed */
+.js .presale:not(.is-on):not(.is-empty) .presale-nums {
+  visibility: hidden;
+}
+html:not(.js) .presale-bar i.is-full {
+  background: var(--red);
+}
+html:not(.js) .presale-bar i.is-part::after {
+  transform: scaleY(var(--f));
+}
 /* an empty bar: a red square runs along it, the first time it is seen */
 .presale.is-on.is-empty .presale-bar i {
   animation: presale-scan 0.55s var(--ease-out) both;
@@ -924,13 +948,6 @@
     background-color: var(--red);
   }
 }
-.presale-scale {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: rgba(255, 255, 255, 0.45);
-}
-
 /* ------------------------------------------------------------------ smaller screens */
 @media (max-width: 1100px) {
   .token-bottom {
@@ -965,7 +982,6 @@
 .token-label,
 .token-facts dt,
 .presale-when,
-.presale-scale,
 .scard-tag,
 .story-progress {
   font-family: var(--mono);
