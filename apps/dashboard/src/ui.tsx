@@ -41,6 +41,8 @@ const P: Record<string, ReactNode> = {
   download: <><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></>,
   up: <><path d="M12 19V5" /><path d="m5 12 7-7 7 7" /></>,
   key: <><circle cx="7.5" cy="15.5" r="4.5" /><path d="m10.7 12.3 9.8-9.8" /><path d="m17 6 3 3" /><path d="m14.5 8.5 2 2" /></>,
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z" /></>,
+  updown: <><path d="m7 15 5 5 5-5" /><path d="m7 9 5-5 5 5" /></>,
 };
 
 export function Icon({ name, size = 18, className = "" }: { name: string; size?: number; className?: string }) {
@@ -206,6 +208,14 @@ export function explorerTx(cfg: Config, hash: string) {
   if (cfg.chainId === 8453) return `https://basescan.org/tx/${hash}`;
   return null;
 }
+/** The chain's block explorer page for an address, where there is one. */
+export function explorerAddress(cfg: Config, address: string) {
+  if (cfg.chainId === 84532) return `https://sepolia.basescan.org/address/${address}`;
+  if (cfg.chainId === 8453) return `https://basescan.org/address/${address}`;
+  return null;
+}
+/** The network in a word, for the rail's tag (its title gives the full name). */
+export const netName = (cfg: Config) => (cfg.chainId === 31337 ? "Local" : cfg.chainId === 84532 ? "Testnet" : cfg.chainId === 8453 ? "Base" : `Chain ${cfg.chainId}`);
 
 export const dayKey = (t: number) => new Date(t * 1000).toDateString();
 export function dayLabel(t: number) {

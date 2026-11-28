@@ -1,13 +1,14 @@
-// The frame: the side rail (logo, wallet, sections, live state), the top bar (page name, network, the bell and
-// its notification history), the phone tabs, and the two screens before the app (starting, relay offline).
-import { useEffect, useRef, useState } from "react";
+// The frame: the side rail (logo and network, the protected wallet and its balance, the sections, and at its
+// foot the owner's wallet with its menu), the top bar (page name, the bell and its notification history), the
+// phone tabs, and the two screens before the app (starting, relay offline).
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { Address, Hex } from "viem";
 import type { Alert, Page, Panel } from "./App";
-import { Blocks } from "./blocks";
+import { Aurora } from "./aurora";
 import { Logo } from "./brand";
-import { Btn, Px, Sq, St, useDismiss, useNow, type Tone } from "./kit";
-import { ago, chainOf, short, type Config, type Owner } from "./lib";
-import { Icon } from "./ui";
+import { Btn, Identicon, Px, Sq, St, Tween, useDismiss, useNow, type Tone } from "./kit";
+import { HOME_URL, ago, chainOf, ownerName, short, type Config, type Owner } from "./lib";
+import { Icon, explorerAddress, netName, usd } from "./ui";
 
 const NAV: { id: Page; label: string; icon: string }[] = [
   { id: "home", label: "Home", icon: "home" },
@@ -23,48 +24,144 @@ const ls = {
 };
 
 // ------------------------------------------------------------------ side rail
-export function Side({ page, go, held, cfg, owner, accounts, account, setAccount, live, busy, onCreate }: {
+export function Side({ page, go, held, cfg, owner, accounts, account, setAccount, total, live, busy, onCreate, onDisconnect }: {
   page: Page; go: (p: Page) => void; held: number; cfg: Config; owner: Owner; accounts: Address[]; account: Address | null;
-  setAccount: (a: Address) => void; live: boolean; busy: string | null; onCreate: () => void;
+  setAccount: (a: Address) => void; total: number | null; live: boolean; busy: string | null; onCreate: () => void; onDisconnect: () => void;
 }) {
   return (
     <aside className="side">
-      <Blocks />
-      <a className="logo" href="#home" onClick={(e) => { e.preventDefault(); go("home"); }} aria-label="Killswitch home">
-        <Logo />
-      </a>
-      <WalletSwitch accounts={accounts} account={account} setAccount={setAccount} busy={busy} onCreate={onCreate} />
-      <nav className="nav" aria-label="Sections">
-        {NAV.map((n) => (
-          <button key={n.id} type="button" className={`nav-i ${page === n.id ? "on" : ""}`} aria-current={page === n.id ? "page" : undefined} onClick={() => go(n.id)}>
-            <Icon name={n.icon} size={17} />
-            {n.label}
-            {n.id === "activity" && held > 0 && <span className="count" aria-label={`${held} waiting for you`}>{held}</span>}
-          </button>
-        ))}
-      </nav>
+      <Aurora kind="rail" />
+      <div className="side-top">
+        <a className="logo" href="#home" onClick={(e) => { e.preventDefault(); go("home"); }} aria-label="Killswitch home">
+          <Logo />
+        </a>
+        <span
+          className={`net ${live ? "" : "is-wait"}`}
+          title={live ? `${chainOf(cfg).name}. Updates arrive as they happen.` : `${chainOf(cfg).name}. Reconnecting to the relay.`}
+        >
+          <i aria-hidden="true" />
+          {netName(cfg)}
+        </span>
+      </div>
+      <WalletSwitch accounts={accounts} account={account} setAccount={setAccount} total={total} busy={busy} onCreate={onCreate} />
+      <Nav page={page} go={go} held={held} />
       <div className="side-foot">
-        <div className="conn" aria-label="Connection">
-          <div className="conn-r">
-            <St s={live ? "ok" : "wait"}>{live ? "Live" : "Reconnecting"}</St>
-            <span className="k">{chainOf(cfg).name}</span>
-          </div>
-          <div className="conn-r">
-            <b title={owner.address}>{short(owner.address)}</b>
-            <span className="k">{owner.kind === "dev" ? "Dev wallet" : "Your wallet"}</span>
-          </div>
-        </div>
+        <Account cfg={cfg} owner={owner} live={live} onDisconnect={onDisconnect} />
       </div>
     </aside>
   );
 }
 
+/** The sections. The one you are on sits on a highlight with a red square, and the highlight slides to the next. */
+function Nav({ page, go, held }: { page: Page; go: (p: Page) => void; held: number }) {
+  const ref = useRef<HTMLElement>(null);
+  const placed = useRef(false);
+  const [at, setAt] = useState<{ y: number; h: number; move: boolean } | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current?.querySelector<HTMLElement>(`[data-page="${page}"]`);
+    if (!el) return;
+    setAt({ y: el.offsetTop, h: el.offsetHeight, move: placed.current });
+    placed.current = true;
+  }, [page]);
+  return (
+    <nav className="nav" aria-label="Sections" ref={ref}>
+      {at && <span className={`nav-mark ${at.move ? "is-moving" : ""}`} style={{ height: at.h, transform: `translate3d(0, ${at.y}px, 0)` }} aria-hidden="true" />}
+      {NAV.map((n) => (
+        <button key={n.id} type="button" data-page={n.id} className={`nav-i ${page === n.id ? "on" : ""}`} aria-current={page === n.id ? "page" : undefined} onClick={() => go(n.id)}>
+          <Icon name={n.icon} size={17} />
+          {n.label}
+          {n.id === "activity" && held > 0 && <span className="count" aria-label={`${held} waiting for you`}>{held}</span>}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+/** Who signs: the owner's wallet at the foot of the rail; what you can do with it opens above it. */
+function Account({ cfg, owner, live, onDisconnect }: { cfg: Config; owner: Owner; live: boolean; onDisconnect: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useDismiss(ref, open, () => setOpen(false));
+  return (
+    <div className="acct" ref={ref}>
+      {open && (
+        <div className="menu up" role="menu" aria-label="Your wallet">
+          <OwnerItems cfg={cfg} owner={owner} close={() => setOpen(false)} onDisconnect={onDisconnect} />
+        </div>
+      )}
+      <button type="button" className="acct-btn" aria-haspopup="menu" aria-expanded={open} title={owner.address} onClick={() => setOpen(!open)}>
+        <Identicon address={owner.address} size={32} />
+        <span className="acct-t">
+          <b>{short(owner.address)}</b>
+          <span>
+            {live ? (
+              ownerName(owner)
+            ) : (
+              <>
+                <Px /> Reconnecting
+              </>
+            )}
+          </span>
+        </span>
+        <Icon name="updown" size={15} />
+      </button>
+    </div>
+  );
+}
+
+/** The owner's wallet: copy its address, see it on the explorer, go to the website, disconnect. */
+function OwnerItems({ cfg, owner, head, close, onDisconnect }: { cfg: Config; owner: Owner; head?: boolean; close: () => void; onDisconnect: () => void }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1400);
+    return () => clearTimeout(t);
+  }, [copied]);
+  const link = explorerAddress(cfg, owner.address);
+  return (
+    <>
+      {head && (
+        <div className="menu-h">
+          <Identicon address={owner.address} size={28} />
+          <span>
+            <b>{short(owner.address)}</b>
+            <span>
+              {ownerName(owner)} · {chainOf(cfg).name}
+            </span>
+          </span>
+        </div>
+      )}
+      <button
+        type="button"
+        role="menuitem"
+        className="menu-i add"
+        onClick={() => navigator.clipboard?.writeText(owner.address).then(() => setCopied(true), () => {})}
+      >
+        <Icon name={copied ? "check" : "copy"} size={15} /> {copied ? "Copied" : "Copy address"}
+      </button>
+      {link && (
+        <a role="menuitem" className="menu-i add" href={link} target="_blank" rel="noopener noreferrer" onClick={close}>
+          <Icon name="external" size={15} /> View on explorer
+        </a>
+      )}
+      <a role="menuitem" className="menu-i add" href={HOME_URL}>
+        <Icon name="globe" size={15} /> Killswitch website
+      </a>
+      <div className="menu-sep" />
+      <button type="button" role="menuitem" className="menu-i add bad" onClick={() => { close(); onDisconnect(); }}>
+        <Icon name="power" size={15} /> Disconnect
+      </button>
+    </>
+  );
+}
+
 type WalletProps = {
   accounts: Address[]; account: Address | null; setAccount: (a: Address) => void; busy: string | null; onCreate: () => void;
-  compact?: boolean; live?: boolean;
+  total?: number | null; compact?: boolean; live?: boolean; extra?: (close: () => void) => ReactNode;
 };
-/** The wallet this page is about, and a menu of the others. `compact` is the phone's chip in the top bar. */
-function WalletSwitch({ accounts, account, setAccount, busy, onCreate, compact, live }: WalletProps) {
+/** The protected wallet this page is about, its balance, and a menu of the others. `compact` is the phone's
+ *  chip in the top bar, whose menu also holds the owner's wallet (`extra`). */
+function WalletSwitch({ accounts, account, setAccount, busy, onCreate, total, compact, live, extra }: WalletProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(ref, open, () => setOpen(false));
@@ -79,14 +176,13 @@ function WalletSwitch({ accounts, account, setAccount, busy, onCreate, compact, 
         </button>
       ) : (
         <button type="button" className="wsw-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-          <span className="wsw-t">
-            <span className="lbl">Protected wallet</span>
-            <b title={account ?? ""}>{short(account ?? "")}</b>
-          </span>
+          <span className="lbl">Protected wallet</span>
           <span className="wsw-r">
             {accounts.length > 1 && <span className="wsw-n" aria-label={`wallet ${i + 1} of ${accounts.length}`}>{i + 1}/{accounts.length}</span>}
             <Icon name="down" size={16} />
           </span>
+          <b className="wsw-bal">{total == null ? <span className="wsw-skel" /> : <Tween value={total} format={(n) => usd(n)} />}</b>
+          <span className="wsw-a" title={account ?? ""}>{short(account ?? "")}</span>
         </button>
       )}
       {open && (
@@ -109,6 +205,12 @@ function WalletSwitch({ accounts, account, setAccount, busy, onCreate, compact, 
           <button type="button" role="menuitem" className="menu-i add" disabled={!!busy} onClick={() => { setOpen(false); onCreate(); }}>
             <Icon name="plus" size={15} /> Create another wallet
           </button>
+          {extra && (
+            <>
+              <div className="menu-sep" />
+              {extra(() => setOpen(false))}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -116,10 +218,10 @@ function WalletSwitch({ accounts, account, setAccount, busy, onCreate, compact, 
 }
 
 // ------------------------------------------------------------------ top bar
-export function Top({ page, cfg, live, alerts, account, ring, go, open, accounts, setAccount, busy, onCreate }: {
+export function Top({ page, cfg, owner, live, alerts, account, ring, go, open, accounts, setAccount, busy, onCreate, onDisconnect }: {
   page: Page; cfg: Config; owner: Owner; live: boolean; alerts: Alert[]; account: Address | null; ring: number;
   go: (p: Page) => void; open: (p: Panel) => void;
-  accounts: Address[]; setAccount: (a: Address) => void; busy: string | null; onCreate: () => void;
+  accounts: Address[]; setAccount: (a: Address) => void; busy: string | null; onCreate: () => void; onDisconnect: () => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -140,7 +242,16 @@ export function Top({ page, cfg, live, alerts, account, ring, go, open, accounts
           {chainOf(cfg).name}
         </span>
         <div className="m-wallet">
-          <WalletSwitch compact live={live} accounts={accounts} account={account} setAccount={setAccount} busy={busy} onCreate={onCreate} />
+          <WalletSwitch
+            compact
+            live={live}
+            accounts={accounts}
+            account={account}
+            setAccount={setAccount}
+            busy={busy}
+            onCreate={onCreate}
+            extra={(close) => <OwnerItems head cfg={cfg} owner={owner} close={close} onDisconnect={onDisconnect} />}
+          />
         </div>
         <Bell alerts={alerts} account={account} ring={ring} go={go} open={open} />
       </div>
