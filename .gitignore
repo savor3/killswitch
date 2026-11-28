@@ -10,3 +10,6 @@ dist/
 *.env
 !.env.example
 .DS_Store
+
+# local npm pack output
+packages/mcp/*.tgz

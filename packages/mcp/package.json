@@ -1,0 +1,29 @@
+{
+  "name": "killswitch-wallet-mcp",
+  "version": "0.1.1",
+  "description": "Killswitch wallet for AI agents (MCP server): spend only inside the owner's on-chain limits.",
+  "type": "module",
+  "bin": {
+    "killswitch-wallet-mcp": "dist/server.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agent",
+    "wallet",
+    "killswitch"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/savor3/killswitch.git",
+    "directory": "packages/mcp"
+  }
+}
