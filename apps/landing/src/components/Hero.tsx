@@ -7,7 +7,7 @@ import signalsS from "../assets/media/card-signals-640.webp";
 import signals from "../assets/media/card-signals.webp";
 import trackS from "../assets/media/card-track-640.webp";
 import track from "../assets/media/card-track.webp";
-import { APP_URL } from "../config";
+import { APP_URL, PRESALE_URL } from "../config";
 import { goToApp } from "../lib/launch";
 import { reduceMotion, useScrollFrame } from "../lib/motion";
 import { HeroPixel } from "./HeroPixel";
@@ -67,6 +67,12 @@ export function Hero() {
           <div className="hero-cta" style={{ "--d": 2 } as CSSProperties}>
             <a className="sbtn sbtn-red" href={APP_URL} onClick={goToApp}>
               <span>Launch App</span>
+              <i aria-hidden="true">
+                <b>→</b>
+              </i>
+            </a>
+            <a className="sbtn sbtn-glass" href={PRESALE_URL}>
+              <span>$KILL Pre-sale</span>
               <i aria-hidden="true">
                 <b>→</b>
               </i>

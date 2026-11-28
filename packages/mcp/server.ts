@@ -56,6 +56,7 @@ server.registerTool(
       allowed: s.rules.map((r: any) => r.name),
       caps: s.limits.map((l: any) => `${l.text} used this period (guardian co-signs single ops above ${(Number(l.cosignAbove) / 10 ** l.decimals)} ${l.symbol})`),
       balances: b,
+      networkFees: "Paid by the Killswitch relayer. This wallet needs no ETH for gas; the agent never pays fees.",
     });
   },
 );

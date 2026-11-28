@@ -224,9 +224,15 @@ function NewAgent({ app, open, onClose, onSubmit }: { app: App; open: boolean; o
 }
 
 // ------------------------------------------------------------------ connect the new agent to an AI
+// The MCP server is the npm package "killswitch-wallet-mcp" (packages/mcp). Every AI app runs it with `npx`; nothing to clone
+// or build. VITE_KS_MCP_TGZ points at a local `npm run mcp:pack` tarball, to try the flow before it is published.
+const MCP_TGZ = (import.meta.env.VITE_KS_MCP_TGZ as string | undefined) || "";
+const NPX_ARGS = MCP_TGZ ? ["-y", "-p", MCP_TGZ, "killswitch-wallet-mcp"] : ["-y", "killswitch-wallet-mcp"];
+type ConnectTab = "code" | "desktop" | "cursor" | "vscode" | "codex" | "other" | "sdk";
+
 function Connect({ app, open, c: cNow, onClose }: { app: App; open: boolean; c: Created | null; onClose: () => void }) {
   const c = useLatest(cNow);
-  const [tab, setTab] = useState<"code" | "desktop" | "sdk">("code");
+  const [tab, setTab] = useState<ConnectTab>("code");
   const [reveal, setReveal] = useState(false);
   const [copied, setCopied] = useState("");
   useEffect(() => {
@@ -237,45 +243,65 @@ function Connect({ app, open, c: cNow, onClose }: { app: App; open: boolean; c: 
   }, [open]);
   if (!c) return null;
   const cfg = app.cfg;
-  const local = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "5175";
-  const relay = local ? `${location.protocol}//${location.hostname}:8787` : location.origin;
+  // The relay the AI's plug-in talks to: a local Anvil relay on :8787; the public site's own address; and while
+  // previewing the web app locally against the live relay, that relay's public address (not the dev server's).
+  const relay = cfg.chainId === 31337
+    ? `${location.protocol}//${location.hostname}:8787`
+    : import.meta.env.DEV
+      ? ((import.meta.env.VITE_KS_RELAY_PUBLIC as string | undefined) || "https://app-killswitch.storygame.io")
+      : location.origin;
   const hosted = !!(cfg as any).hosted;
   const root = hosted ? "~/killswitch" : (cfg as any).root ?? "/path/to/killswitch";
   const key = reveal ? c.key : `${c.key.slice(0, 6)}${"•".repeat(20)}${c.key.slice(-4)}`;
   const envPairs = [["KS_RELAY", relay], ["KS_ACCOUNT", c.account], ["KS_AGENT_ID", c.agentId], ["KS_SESSION_KEY", c.key]] as const;
   // Relay running inside WSL (repo under /mnt/<drive>/): Claude on Windows starts the MCP server through wsl.exe.
   const viaWsl = !hosted && root.startsWith("/mnt/");
-  // Hosted: the visitor runs the MCP server from their own clone. Windows PowerShell 5 has no `&&` and no `~` for exe args.
   const isWin = /Windows/i.test(navigator.userAgent);
-  const hostDir = isWin ? "$HOME\\killswitch" : "~/killswitch";
-  const hostEntry = isWin ? `${hostDir}\\dist\\mcp\\server.mjs` : `${hostDir}/dist/mcp/server.mjs`;
-  const setup = isWin
-    ? `git clone https://github.com/savor3/killswitch ${hostDir}; cd ${hostDir}; npm install; npm run mcp:build`
-    : `git clone https://github.com/savor3/killswitch ${hostDir} && cd ${hostDir} && npm install && npm run mcp:build`;
   const envFlags = (k: string) => envPairs.map(([n, v]) => `-e ${n}=${n === "KS_SESSION_KEY" ? k : v}`).join(" ");
   const wslArgs = (k: string) => ["-e", "env", ...envPairs.map(([n, v]) => `${n}=${n === "KS_SESSION_KEY" ? k : v}`),
     // Run a prebuilt single-file bundle: `npx tsx` over /mnt/c takes ~30 s to start, past Claude's MCP connect timeout.
     "bash", "-c", `. ~/.nvm/nvm.sh && cd ${root} && { [ -f dist/mcp/server.mjs ] || npm run -s mcp:build >&2; } && exec node dist/mcp/server.mjs`];
-  const snippets = {
-    code: (k: string) => viaWsl
-      ? `claude mcp add killswitch-wallet -- wsl ${wslArgs(k).map((a) => (/\s/.test(a) ? `"${a}"` : a)).join(" ")}`
-      : hosted
-      ? `claude mcp add killswitch-wallet ${envFlags(k)} -- node ${hostEntry}`
-      : `claude mcp add killswitch-wallet \\\n${envPairs.map(([n, v]) => `  -e ${n}=${n === "KS_SESSION_KEY" ? k : v} \\`).join("\n")}\n  -- npx --prefix ${root} tsx ${root}/packages/mcp/server.ts`,
-    desktop: (k: string) => JSON.stringify({ mcpServers: { "killswitch-wallet": viaWsl
-      ? { command: "wsl", args: wslArgs(k) }
-      : hosted
-      ? { command: "node", args: [isWin ? "C:\\Users\\<you>\\killswitch\\dist\\mcp\\server.mjs" : "/Users/<you>/killswitch/dist/mcp/server.mjs"], env: Object.fromEntries(envPairs.map(([n, v]) => [n, n === "KS_SESSION_KEY" ? k : v])) }
-      : { command: "npx", args: ["--prefix", root, "tsx", `${root}/packages/mcp/server.ts`], env: Object.fromEntries(envPairs.map(([n, v]) => [n, n === "KS_SESSION_KEY" ? k : v])) } } }, null, 2),
-    sdk: (k: string) => envPairs.map(([n, v]) => `${n}=${n === "KS_SESSION_KEY" ? k : v}`).join("\n"),
+  // One step per AI app. All run the same package with the same four settings (k = the key as shown or the real one).
+  const envObj = (k: string) => Object.fromEntries(envPairs.map(([n, v]) => [n, n === "KS_SESSION_KEY" ? k : v]));
+  const q = (a: string) => (/[\s"]/.test(a) ? `"${a}"` : a);
+  const npx = NPX_ARGS.map(q).join(" ");
+  // Claude Code and Claude Desktop on Windows start `npx` through cmd (npx is a .cmd script there)
+  const stdio = isWin ? { command: "cmd", args: ["/c", "npx", ...NPX_ARGS] } : { command: "npx", args: NPX_ARGS };
+  const plain = { command: "npx", args: NPX_ARGS };
+  // Each agent gets its own connection name, so several agents (even two of the same kind) live side by side in one
+  // AI app; connecting the same agent again replaces its own entry. e.g. "Trading bot" 0x0e56… → killswitch-trading-bot-0e56
+  const slug = c.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24).replace(/-+$/, "") || "agent";
+  const name = `killswitch-${slug}-${c.agentId.slice(2, 6).toLowerCase()}`;
+  const cursorLink = (k: string) =>
+    `cursor://anysphere.cursor-deeplink/mcp/install?name=${encodeURIComponent(name)}&config=${btoa(JSON.stringify({ ...plain, env: envObj(k) }))}`;
+  const vscodeLink = (k: string) =>
+    `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name, type: "stdio", ...plain, env: envObj(k) }))}`;
+  const snippets: Record<ConnectTab, (k: string) => string> = {
+    code: (k) => viaWsl
+      ? `claude mcp add ${name} -- wsl ${wslArgs(k).map((a) => (/\s/.test(a) ? `"${a}"` : a)).join(" ")}`
+      // an older entry for this same agent (this folder's or everyone's) would shadow the new one: clear both first, quietly
+      : `${["user", "local"].map((s) => `claude mcp remove ${name} --scope ${s} ${isWin ? "2>$null" : "2>/dev/null"}`).join("; ")}; claude mcp add ${name} --scope user ${envFlags(k)} -- ${isWin ? "cmd /c npx" : "npx"} ${npx}; claude "check my wallet with ${name}"`,
+    desktop: (k) => JSON.stringify({ mcpServers: { [name]: viaWsl ? { command: "wsl", args: wslArgs(k) } : { ...stdio, env: envObj(k) } } }, null, 2),
+    cursor: (k) => JSON.stringify({ mcpServers: { [name]: { ...plain, env: envObj(k) } } }, null, 2),
+    vscode: (k) => JSON.stringify({ servers: { [name]: { type: "stdio", ...plain, env: envObj(k) } } }, null, 2),
+    codex: (k) => `codex mcp add ${name} ${envPairs.map(([n, v]) => `--env ${n}=${n === "KS_SESSION_KEY" ? k : v}`).join(" ")} -- npx ${npx}`,
+    other: (k) => JSON.stringify({ mcpServers: { [name]: { ...plain, env: envObj(k) } } }, null, 2),
+    sdk: (k) => envPairs.map(([n, v]) => `${n}=${n === "KS_SESSION_KEY" ? k : v}`).join("\n"),
   };
-  const help = {
-    code: "Run this in your terminal. Then ask Claude: “check my wallet” or “swap 10 USDC to ETH”.",
-    desktop: hosted
-      ? "Paste into Claude Desktop → Settings → Developer → Edit config (replace <you> with your user folder), then restart Claude."
-      : "Paste into Claude Desktop → Settings → Developer → Edit config, then restart Claude.",
+  const help: Record<ConnectTab, string> = {
+    code: "One line: paste it in your terminal. It adds this agent for every folder under its own name, so it sits beside your other agents, and opens Claude on your wallet's status.",
+    desktop: "Paste into Claude Desktop → Settings → Developer → Edit config, save, then quit and reopen Claude. Ask: “check my wallet”.",
+    cursor: "Click Add to Cursor and confirm in Cursor. Or paste the JSON into ~/.cursor/mcp.json.",
+    vscode: "Click Install in VS Code and confirm (GitHub Copilot agent mode). Or paste the JSON into .vscode/mcp.json.",
+    codex: "One line: paste it in your terminal, then start codex and ask: “check my wallet”.",
+    other: "For any other app that supports MCP: add this server to its MCP settings.",
     sdk: "Put these in your agent's environment and use createKillswitchAgent() from packages/sdk.",
   };
+  const label: Record<ConnectTab, string> = {
+    code: "Terminal", desktop: "claude_desktop_config.json", cursor: "mcp.json", vscode: ".vscode/mcp.json",
+    codex: "Terminal", other: "MCP config", sdk: "Environment",
+  };
+  const link = tab === "cursor" ? { href: cursorLink(c.key), text: "Add to Cursor" } : tab === "vscode" ? { href: vscodeLink(c.key), text: "Install in VS Code" } : null;
   const copy = () => {
     navigator.clipboard.writeText(snippets[tab](c.key));
     setCopied(tab);
@@ -294,18 +320,30 @@ function Connect({ app, open, c: cNow, onClose }: { app: App; open: boolean; c: 
         options={[
           { id: "code", label: "Claude Code" },
           { id: "desktop", label: "Claude Desktop" },
+          { id: "cursor", label: "Cursor" },
+          { id: "vscode", label: "VS Code" },
+          { id: "codex", label: "Codex" },
+          { id: "other", label: "Other" },
           { id: "sdk", label: "SDK" },
         ]}
       />
-      {hosted && tab !== "sdk" && (
-        <p className="fine">
-          First, once{isWin ? " (in PowerShell)" : ""}: <code>{setup}</code>
-        </p>
+      {viaWsl && tab !== "sdk" && (
+        <p className="fine">Local development: the plug-in runs from this repo inside WSL.</p>
       )}
       <p className="fine">{help[tab]}</p>
+      {link && (
+        <p>
+          <a className="btn ink" href={link.href}>
+            <span>{link.text}</span>
+            <i aria-hidden="true">
+              <b>→</b>
+            </i>
+          </a>
+        </p>
+      )}
       <div className="code">
         <div className="code-h">
-          <span className="lbl">{tab === "sdk" ? "Environment" : tab === "desktop" ? "claude_desktop_config.json" : "Terminal"}</span>
+          <span className="lbl">{label[tab]}</span>
           <span className="acts">
             <Btn kind="ghost" size="sm" onClick={() => setReveal(!reveal)}>
               <Icon name="eye" size={14} /> {reveal ? "Hide key" : "Show key"}
