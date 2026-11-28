@@ -288,22 +288,23 @@ p {
 
 /* ------------------------------------------------------------------ scroll choreography (lib/reveal.ts) */
 /* an element marked data-rv comes into place as it scrolls into view; --rv-i makes neighbours follow one
-   another */
-[data-rv="up"],
-[data-rv="fade"],
-[data-rv="scale"] {
+   another. Only while scripts run (the "js" class, set first thing in every page's head): a page prerendered
+   into its HTML shows everything at once without them. */
+.js [data-rv="up"],
+.js [data-rv="fade"],
+.js [data-rv="scale"] {
   opacity: 0;
   transition:
     opacity 0.9s var(--ease) calc(var(--rv-i, 0) * 90ms),
     transform 1.2s var(--ease) calc(var(--rv-i, 0) * 90ms);
 }
-[data-rv="up"] {
+.js [data-rv="up"] {
   transform: translate3d(0, 36px, 0);
 }
-[data-rv="scale"] {
+.js [data-rv="scale"] {
   transform: translate3d(0, 24px, 0) scale(0.965);
 }
-[data-rv][data-in] {
+.js [data-rv][data-in] {
   opacity: 1;
   transform: none;
 }
@@ -318,7 +319,7 @@ p {
 .wr [data-w] {
   transition: color 0.45s var(--ease), opacity 0.45s var(--ease);
 }
-.wr [data-s="0"] {
+.js .wr [data-s="0"] {
   opacity: 0;
 }
 .wr [data-s="1"],

@@ -15,19 +15,28 @@ const RED = [255, 32, 40]; // #FF2028
 
 // the curtains: an arch over the words (lower edge `top` at the middle, falling `bow` to the sides), waves
 // along it, how far the rays reach up, how bright, and the phase of its drift
-const CURTAINS = [
+const HERO = [
   { top: 0.2, bow: 1.25, mid: 0.52, w1: 0.04, f1: 0.9, T1: 34, w2: 0.014, f2: 2.3, T2: 21, reach: 0.2, k: 1.08, ph: 0.3 },
   { top: 0.08, bow: 0.8, mid: 0.44, w1: 0.03, f1: 1.3, T1: 47, w2: 0.012, f2: 3.1, T2: 26, reach: 0.12, k: 0.36, ph: 2.2 },
 ];
 
 const tri = (x: number) => 1 - Math.abs(2 * (x - Math.floor(x)) - 1);
 
-export function HeroPixel() {
+// the pre-sale page's panel: the words sit top left and the card on the right, so the arch rises behind the
+// card and sweeps down through the open middle, leaving the headline in dark sky
+const SALE = [
+  { top: 0.12, bow: 1.9, mid: 0.8, w1: 0.035, f1: 0.9, T1: 34, w2: 0.013, f2: 2.3, T2: 21, reach: 0.2, k: 1.05, ph: 0.3 },
+  { top: 0.02, bow: 1.3, mid: 0.7, w1: 0.03, f1: 1.3, T1: 47, w2: 0.012, f2: 3.1, T2: 26, reach: 0.12, k: 0.36, ph: 2.2 },
+];
+
+/** `look`: "hero", the home page's arch over centred words; "sale", the pre-sale panel's. */
+export function HeroPixel({ look = "hero" }: { look?: "hero" | "sale" }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const c = ref.current!;
     const ctx = c.getContext("2d")!;
     const still = reduceMotion();
+    const CURTAINS = look === "sale" ? SALE : HERO;
     let cols = 0;
     let rows = 0;
     let dpr = 1;
@@ -189,6 +198,6 @@ export function HeroPixel() {
       io.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [look]);
   return <canvas ref={ref} className="hero-canvas" aria-hidden="true" />;
 }

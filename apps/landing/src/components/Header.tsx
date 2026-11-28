@@ -1,24 +1,37 @@
 // The bar along the top. It sticks; it steps out of the way while you read down the page and comes back as
 // soon as you scroll up; past the top it gets a white ground. The sections sit together in the middle as one
-// strip, split by the same dashed rule as the buttons; the section you are in is marked with a red square,
-// and a label decodes from binary under the pointer.
+// strip, split by the same dashed rule as the buttons; the section or page you are on is marked with a red
+// square, and a label decodes from binary under the pointer. On the home page the sections are jumps within
+// the page; from any other page they lead back to them.
 import { useEffect, useState, type CSSProperties } from "react";
 import { Logo } from "../brand/Logo";
-import { APP_URL, DOCS_URL } from "../config";
+import { APP_URL, DOCS_URL, PRESALE_URL } from "../config";
+import { goToApp } from "../lib/launch";
+import { short, useWallet } from "../lib/wallet";
+import { Identicon } from "./Identicon";
+import { homeLink, usePath } from "../site/where";
 import { Decode } from "./Decode";
 
-const LINKS = [
-  { href: "#how", label: "How It Works" },
-  { href: "#security", label: "Security" },
-  { href: "#developers", label: "Developers" },
+const SECTIONS = [
+  { hash: "#how", label: "How It Works" },
+  { hash: "#security", label: "Security" },
+  { hash: "#developers", label: "Developers" },
 ];
 
 export function Header() {
+  const path = usePath();
+  const home = path === "/";
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("");
   const [hover, setHover] = useState("");
+  const wallet = useWallet();
+  const links = [
+    ...SECTIONS.map((s) => ({ href: homeLink(path, s.hash), label: s.label, on: home && active === s.hash })),
+    { href: PRESALE_URL, label: "Pre-sale", on: path === PRESALE_URL },
+  ];
+  const inDocs = path === DOCS_URL || path.startsWith(`${DOCS_URL}/`);
 
   useEffect(() => {
     document.documentElement.classList.toggle("is-menu", open);
@@ -51,9 +64,10 @@ export function Header() {
     };
   }, []);
 
-  // which section is in the middle of the screen
+  // on the home page: which section is in the middle of the screen
   useEffect(() => {
-    const els = LINKS.map((l) => document.querySelector(l.href)).filter(Boolean) as Element[];
+    if (!home) return;
+    const els = SECTIONS.map((s) => document.querySelector(s.hash)).filter(Boolean) as Element[];
     const io = new IntersectionObserver(
       (es) => {
         for (const e of es) if (e.isIntersecting) setActive(`#${e.target.id}`);
@@ -67,20 +81,20 @@ export function Header() {
       io.disconnect();
       removeEventListener("scroll", top);
     };
-  }, []);
+  }, [home]);
 
   return (
     <header className={`hdr ${scrolled ? "is-scrolled" : ""} ${hidden && !open ? "is-hidden" : ""}`}>
-      <a className="hdr-logo" href="#top" aria-label="Killswitch, back to top">
+      <a className="hdr-logo" href={home ? "#top" : "/"} aria-label={home ? "Killswitch, back to top" : "Killswitch home"}>
         <Logo />
       </a>
       <nav className="hdr-nav" aria-label="Sections">
-        {LINKS.map((l) => (
+        {links.map((l) => (
           <a
             key={l.href}
             href={l.href}
-            className={active === l.href ? "is-on" : ""}
-            aria-current={active === l.href ? "true" : undefined}
+            className={l.on ? "is-on" : ""}
+            aria-current={l.on ? (l.href === path ? "page" : "true") : undefined}
             onMouseEnter={() => setHover(l.href)}
             onMouseLeave={() => setHover("")}
           >
@@ -89,14 +103,21 @@ export function Header() {
         ))}
       </nav>
       <div className="hdr-cta">
-        <a className="sbtn sbtn-grey" href={DOCS_URL} target="_blank" rel="noopener">
+        <a className={`sbtn sbtn-grey ${inDocs ? "is-on" : ""}`} href={DOCS_URL} aria-current={inDocs ? "page" : undefined}>
           <span>Docs</span>
           <i aria-hidden="true">
-            <b>↗</b>
+            <b>→</b>
           </i>
         </a>
-        <a className="sbtn sbtn-ink" href={APP_URL} target="_blank" rel="noopener">
-          <span>Launch App</span>
+        {wallet && (
+          <a className="hdr-wallet" href={APP_URL} onClick={goToApp} title={`Connected: ${wallet}`}>
+            <Identicon address={wallet} size={22} />
+            <span className="sr-only">Connected wallet </span>
+            {short(wallet)}
+          </a>
+        )}
+        <a className="sbtn sbtn-ink" href={APP_URL} onClick={goToApp}>
+          <span>{wallet ? "Open App" : "Launch App"}</span>
           <i aria-hidden="true">
             <b>→</b>
           </i>
@@ -109,19 +130,29 @@ export function Header() {
       </button>
       <div className={`menu ${open ? "is-open" : ""}`} id="menu" inert={!open}>
         <nav aria-label="Menu">
-          {LINKS.map((l, i) => (
-            <a key={l.href} href={l.href} onClick={() => setOpen(false)} style={{ "--i": i } as CSSProperties}>
+          {[...links, { href: DOCS_URL, label: "Docs", on: inDocs }].map((l, i) => (
+            <a
+              key={l.href}
+              href={l.href}
+              className={l.on ? "is-on" : ""}
+              aria-current={l.on && l.href === path ? "page" : undefined}
+              onClick={() => setOpen(false)}
+              style={{ "--i": i } as CSSProperties}
+            >
               {l.label}
             </a>
           ))}
         </nav>
-        <div className="menu-cta" style={{ "--i": LINKS.length } as CSSProperties}>
-          <a className="pill pill-white" href={APP_URL} target="_blank" rel="noopener">
-            Launch App
+        <div className="menu-cta" style={{ "--i": links.length + 1 } as CSSProperties}>
+          <a className="pill pill-white" href={APP_URL} onClick={goToApp}>
+            {wallet ? "Open App" : "Launch App"}
           </a>
-          <a className="pill pill-ghost" href={DOCS_URL} target="_blank" rel="noopener">
-            Docs
-          </a>
+          {wallet && (
+            <span className="menu-wallet">
+              <Identicon address={wallet} size={22} />
+              Connected {short(wallet)}
+            </span>
+          )}
         </div>
       </div>
     </header>

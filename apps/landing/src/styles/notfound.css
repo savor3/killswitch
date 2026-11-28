@@ -1,0 +1,152 @@
+/* ------------------------------------------------------------------ 404 */
+.nf {
+  padding: 0 var(--gutter);
+}
+/* the first screen under the bar, the dark of the home page's panel with the app rail's LED grid, everything
+   on one centre line */
+.nf-panel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: calc(100svh - var(--hdr-h) - var(--gutter));
+  padding: clamp(56px, 6vw, 112px) var(--gutter);
+  overflow: hidden;
+  color: var(--white);
+  background:
+    linear-gradient(90deg, rgb(16, 12, 12) 1px, transparent 1px) 0 0 / 7px 7px,
+    linear-gradient(rgb(16, 12, 12) 1px, transparent 1px) 0 0 / 7px 7px,
+    linear-gradient(rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.035)),
+    rgb(16, 12, 12);
+}
+.nf-in {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  width: min(640px, 100%);
+  text-align: center;
+}
+
+/* the digits: 11 columns of squares */
+.nf-digits {
+  --px: clamp(18px, 2.3vw, 42px);
+  --gap: calc(var(--px) * 0.18);
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--px));
+  gap: var(--gap);
+  margin-bottom: clamp(20px, 2.4vw, 40px);
+}
+.nf-digits i {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.06);
+}
+/* lit column by column as the page opens (a white flash, then red), then every 3.6 s a light runs through
+   them from left to right */
+.nf-digits i.is-on {
+  background: var(--red);
+  animation:
+    nf-light 0.62s var(--ease-out) both,
+    nf-scan 3.6s linear infinite;
+  animation-delay:
+    calc(260ms + var(--c) * 85ms),
+    calc(2.2s + var(--c) * 70ms + var(--r) * 18ms);
+}
+@keyframes nf-light {
+  0% {
+    background-color: rgba(255, 255, 255, 0.06);
+    transform: scale(0.55);
+  }
+  35% {
+    background-color: var(--white);
+    transform: scale(1.1);
+  }
+  100% {
+    background-color: var(--red);
+    transform: none;
+  }
+}
+@keyframes nf-scan {
+  0%,
+  7%,
+  100% {
+    background-color: var(--red);
+  }
+  2.5% {
+    background-color: var(--white);
+  }
+}
+
+.nf-in .eyebrow {
+  color: rgba(255, 255, 255, 0.82);
+}
+.nf-h1 {
+  margin: 0;
+  font-size: var(--t-h2);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.nf-lead {
+  margin: 0;
+  max-width: 30em;
+  font-size: var(--t-lead);
+  font-weight: 500;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.66);
+}
+.nf-cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.nf-more {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+}
+.nf-more a {
+  color: var(--white);
+  border-bottom: 1px solid var(--red);
+  transition: color var(--t-hover) var(--ease-out);
+}
+.nf-more a:hover {
+  color: var(--red-soft);
+}
+/* the words arrive after the digits have lit */
+.nf-in > :not(.nf-digits) {
+  animation: nf-in 0.8s var(--ease) both;
+  animation-delay: calc(900ms + var(--k, 0) * 70ms);
+}
+.nf-in > :nth-child(3) {
+  --k: 1;
+}
+.nf-in > :nth-child(4) {
+  --k: 2;
+}
+.nf-in > :nth-child(5) {
+  --k: 3;
+}
+.nf-in > :nth-child(6) {
+  --k: 4;
+}
+@keyframes nf-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+}
+@media (max-width: 760px) {
+  .nf-digits {
+    --px: clamp(14px, 5.2vw, 28px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-digits i.is-on,
+  .nf-in > :not(.nf-digits) {
+    animation: none;
+  }
+}

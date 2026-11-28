@@ -195,8 +195,99 @@
   font-size: 15px;
 }
 
+/* the page you are on, among the buttons */
+.hdr-cta .sbtn-grey.is-on {
+  background: #e3e3e3;
+}
+
+/* the wallet the web app is connected with (lib/wallet.ts): its address beside Open App, with the black square
+   the app uses for "all is well" */
+.hdr-wallet {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 13px 0 12px;
+  background: #efefef;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.02em;
+  color: var(--black);
+  transition: background-color var(--t-hover) var(--ease-out);
+}
+.hdr-wallet:hover {
+  background: #e3e3e3;
+}
+.hdr-wallet {
+  padding-left: 7px;
+}
+/* the wallet's face, as the web app draws it */
+.idn {
+  display: block;
+  flex: none;
+}
+.idn-bg {
+  fill: #161111;
+}
+.idn .on {
+  fill: var(--red);
+}
+.idn .dim {
+  fill: rgba(255, 32, 40, 0.45);
+}
+.idn .off {
+  fill: rgba(255, 255, 255, 0.07);
+}
+.menu-wallet {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.7);
+}
+.menu-cta {
+  align-items: center;
+}
+
+/* into the web app (lib/launch.ts): the opening's three panels sweep in from the left and cover the page */
+.launch {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+.launch i {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(-101%, 0, 0);
+  transition: transform 520ms var(--ease-io);
+}
+.launch i:nth-child(1) {
+  background: var(--red-soft);
+}
+.launch i:nth-child(2) {
+  background: var(--red);
+  transition-delay: 50ms;
+}
+.launch i:nth-child(3) {
+  background: var(--black);
+  transition-delay: 100ms;
+}
+.launch.is-on i {
+  transform: none;
+}
+.is-launching,
+.is-launching body {
+  pointer-events: none;
+}
+
 @media (max-width: 1100px) {
   .hdr-cta .sbtn-grey {
+    display: none;
+  }
+}
+@media (max-width: 1240px) {
+  .hdr-wallet {
     display: none;
   }
 }

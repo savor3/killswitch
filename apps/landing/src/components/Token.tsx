@@ -1,6 +1,6 @@
 // The $KILL token, as whitepaper v1.1 chapter 15 states it. Facts only, with the paper's own notice.
 import type { CSSProperties } from "react";
-import { WHITEPAPER_URL } from "../config";
+import { PRESALE_URL, WHITEPAPER_URL } from "../config";
 import { Presale } from "./Presale";
 import { WordReveal } from "./WordReveal";
 
@@ -28,9 +28,17 @@ export function Token() {
             $KILL is the bond and the unit of payment for a network of independent guardians. Your caps never depend on it:
             no cap, pause or kill switch needs the token.
           </p>
-          <a className="token-link" href={WHITEPAPER_URL} target="_blank" rel="noopener">
-            Read the token chapter
-          </a>
+          <div className="token-links">
+            <a className="sbtn sbtn-red" href={PRESALE_URL}>
+              <span>The Pre-sale</span>
+              <i aria-hidden="true">
+                <b>→</b>
+              </i>
+            </a>
+            <a className="token-link" href={WHITEPAPER_URL} target="_blank" rel="noopener">
+              Read the token chapter
+            </a>
+          </div>
         </div>
         <dl className="token-facts">
           {[
