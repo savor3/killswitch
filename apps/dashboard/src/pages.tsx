@@ -2,9 +2,11 @@
 // are lists you open into the detail drawer; Settings is grouped rows.
 import { useMemo, useState, type ReactNode } from "react";
 import type { App } from "./App";
+import { Aurora } from "./aurora";
 import { Logo } from "./brand";
-import { Btn, Copy, Empty, Meter, Seg, Sq, St, Tween, useArrivals, useNow, type Tone } from "./kit";
-import { ago, chainOf, short, type Agent, type Config, type Op, type Owner } from "./lib";
+import { ConnectStep } from "./connect";
+import { Btn, Copy, Empty, Identicon, Meter, Seg, Sq, St, Tween, useArrivals, useNow, type Tone } from "./kit";
+import { HOME_URL, ago, chainOf, ownerName, short, type Agent, type Config, type Op, type Owner, type WalletInfo } from "./lib";
 import {
   Icon, agentKind, agentState, balanceUsd, dayKey, dayLabel, decOf, exposureUsd, humanSummary, num, opState, opsCsv,
   plural, toNum, tpl, until, usd, type TemplateId,
@@ -506,7 +508,7 @@ export function SettingsPage({ app }: { app: App }) {
           <Btn kind="grey" size="sm" disabled={!!app.busy} onClick={app.createAccount}>
             <Icon name="plus" size={13} /> Create another wallet
           </Btn>
-          {owner.kind === "browser" && <Btn kind="ghost" size="sm" onClick={app.disconnect}>Disconnect</Btn>}
+          <Btn kind="ghost" size="sm" onClick={app.disconnect}>Disconnect</Btn>
         </div>
       </Set>
       <Set title="Guardian" text="It checks every agent action before it happens. It can pause an agent or add an extra check on big payments. It can never spend your money or raise a limit.">
@@ -620,17 +622,21 @@ export function Steps({ n, labels }: { n: number; labels: string[] }) {
   );
 }
 
-export function Onboarding({ cfg, owner, loading, busy, onDev, onBrowser, onCreate }: {
-  cfg: Config; owner: Owner | null; loading: boolean; busy: string | null; onDev: () => void; onBrowser: () => void; onCreate: () => void;
+export function Onboarding({ cfg, owner, loading, busy, onDev, onConnect, onCreate, onDisconnect }: {
+  cfg: Config; owner: Owner | null; loading: boolean; busy: string | null; onDev: () => void;
+  onConnect: (w: WalletInfo, step: (s: "account" | "network") => void, live: () => boolean) => Promise<void>; onCreate: () => void; onDisconnect: () => void;
 }) {
   const step = !owner ? 1 : 2;
   return (
     <div className="onb">
       <div className="onb-l">
-        <Logo />
-        <div>
+        <Aurora kind="panel" />
+        <a className="logo onb-logo" href={HOME_URL} aria-label="Killswitch website">
+          <Logo />
+        </a>
+        <div className="onb-copy">
           <h1>
-            Let AI use your money. <span>Never lose control of it.</span>
+            <span className="ln">Let AI use your money.</span> <span className="ln red">Never lose control of it.</span>
           </h1>
           <p className="lead">Give any AI agent a wallet with hard limits. The blockchain enforces them, a guardian watches every move, and one tap stops everything.</p>
         </div>
@@ -641,35 +647,38 @@ export function Onboarding({ cfg, owner, loading, busy, onDev, onBrowser, onCrea
         </ul>
       </div>
       <div className="onb-r">
-        <div className="onb-card page" key={step}>
+        <div className="onb-card" key={step}>
           <Steps n={step} labels={["Connect wallet", "Protected wallet", "First agent"]} />
-          {step === 1 && (
-            <>
-              <h2>Connect your wallet</h2>
-              <p>Your existing wallet becomes the master key. Only it can change limits, approve payments or stop agents.</p>
-              <Btn kind="ink" size="lg" full arrow="→" onClick={onBrowser}>Connect browser wallet</Btn>
-              {cfg.chainId === 31337 && <Btn kind="grey" size="lg" full onClick={onDev}>Use the local test wallet</Btn>}
-              <p className="muted" style={{ fontSize: 12.5 }}>Works with MetaMask, Coinbase Wallet, Rabby and other browser wallets.</p>
-            </>
-          )}
+          {step === 1 && <ConnectStep cfg={cfg} onConnect={onConnect} onDev={onDev} />}
           {step === 2 &&
             (loading ? (
               <St s="wait">Loading your wallets</St>
             ) : (
               <>
                 <h2>Create your protected wallet</h2>
-                <p>
-                  A smart wallet owned by <span className="mono">{short(owner!.address)}</span>. You move in only what your agents should be able to use.
-                </p>
+                <p>A smart wallet, owned by the wallet below. You move in only what your agents should be able to use.</p>
+                <div className="owned">
+                  <Identicon address={owner!.address} size={34} />
+                  <span className="owned-t">
+                    <b title={owner!.address}>{short(owner!.address)}</b>
+                    <span>
+                      {ownerName(owner!)} · {chainOf(cfg).name}
+                    </span>
+                  </span>
+                  <button type="button" className="linkish" disabled={!!busy} onClick={onDisconnect}>
+                    Disconnect
+                  </button>
+                </div>
                 <div className="flow">
                   <div><span className="lbl">Yours</span><b>Your wallet</b><span>The master key. Stays where it is.</span></div>
                   <i aria-hidden="true">→</i>
                   <div><span className="lbl">New</span><b>Protected wallet</b><span>Holds agent funds, enforces limits.</span></div>
                   <i aria-hidden="true">→</i>
                   <div><span className="lbl">Later</span><b>AI agents</b><span>Act only inside your rules.</span></div>
+                  <b className="flow-tok" aria-hidden="true" />
                 </div>
                 <Btn kind="ink" size="lg" full arrow="→" busy={busy ? busy : null} onClick={onCreate}>Create protected wallet</Btn>
-                <p className="muted" style={{ fontSize: 12.5 }}>One signature with your wallet on {chainOf(cfg).name}.</p>
+                <p className="muted onb-fine">One signature with your wallet on {chainOf(cfg).name}.</p>
               </>
             ))}
         </div>

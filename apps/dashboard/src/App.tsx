@@ -3,14 +3,15 @@ import { encodeFunctionData, keccak256, parseUnits, toHex, type Address, type He
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { KillswitchAccountAbi, KillswitchFactoryAbi, MockDEXAbi, MockERC20Abi } from "../../../shared/abi";
 import { Flows } from "./flows";
-import { Toasts, toasts, type Tone } from "./kit";
+import { Gate } from "./gate";
+import { Toasts, reduceMotion, toasts, type Tone } from "./kit";
 import {
-  api, browserOwner, chainOf, devOwner, publicClient, short, walletProvider,
-  type AccountInfo, type Agent, type Config, type Op, type Owner,
+  api, browserOwner, chainOf, devOwner, publicClient, revokeWallet, short, walletProvider,
+  type AccountInfo, type Agent, type Config, type Op, type Owner, type WalletInfo,
 } from "./lib";
 import { ActivityPage, AgentsPage, HomePage, Onboarding, SettingsPage, Skeleton } from "./pages";
 import { Boot, Offline, Side, Tabs, Top } from "./shell";
-import { buildGrant, decOf, humanSummary, type Prices, type TemplateId } from "./ui";
+import { balanceUsd, buildGrant, decOf, humanSummary, type Prices, type TemplateId } from "./ui";
 
 export type Page = "home" | "agents" | "activity" | "settings";
 export type Theme = "system" | "light" | "dark";
@@ -86,6 +87,23 @@ export function App() {
   const [notify, setNotifyState] = useState(() => ls.get("ks.notify") === "1");
   const [live, setLive] = useState(false);
   const [ring, setRing] = useState(0);
+  // the remembered wallet is being looked for (quietly, without asking it anything)
+  const [checking, setChecking] = useState(true);
+  // the way in (gate.tsx): "enter" when the app is opened from the site, "connect" after a wallet connects
+  const [gate, setGate] = useState<"enter" | "connect" | null>(() => {
+    try {
+      return sessionStorage.getItem("ks.enter") ? "enter" : null;
+    } catch {
+      return null;
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem("ks.enter");
+    } catch {
+      // nothing to clear
+    }
+  }, []);
   const pub = useMemo(() => (cfg ? publicClient(cfg) : null), [cfg]);
 
   useEffect(() => {
@@ -125,15 +143,24 @@ export function App() {
   useEffect(() => {
     if (!cfg) return;
     const pref = ls.get("ks.wallet");
-    if (pref === "browser") browserOwner(cfg).then(setOwner).catch(() => {});
-    else if (pref === "dev" || cfg.chainId === 31337) setOwner(devOwner(cfg));
+    // the wallet used last time, if this site may still see its account: no prompt, no network switch on opening
+    if (pref === "browser")
+      browserOwner(cfg, { silent: true })
+        .then(setOwner)
+        .catch(() => ls.set("ks.wallet", ""))
+        .finally(() => setChecking(false));
+    else {
+      if (pref === "dev" || (pref === null && cfg.chainId === 31337)) setOwner(devOwner(cfg));
+      setChecking(false);
+    }
   }, [cfg]);
   // Follow MetaMask when the user switches account or network.
   useEffect(() => {
     const eth = walletProvider()?.provider as any;
     if (!cfg || !eth?.on || owner?.kind !== "browser") return;
     const onAccounts = (accs: string[]) => {
-      if (!accs.length) { ls.set("ks.wallet", ""); setOwner(null); return; }
+      // the wallet stopped sharing its account (disconnected from the wallet's side): back to connecting
+      if (!accs.length) { ls.set("ks.wallet", ""); setOwner(null); setAccounts(null); setAccount(null); setInfo(null); setOps([]); return; }
       if (accs[0].toLowerCase() !== owner.address.toLowerCase()) browserOwner(cfg).then(setOwner).catch(() => {});
     };
     const onChain = (id: string) => {
@@ -285,9 +312,23 @@ export function App() {
     return o.wallet.writeContract({ address, abi, functionName, args, account: o.wallet.account!, chain: chainOf(cfg!) } as any);
   };
 
-  const connectDev = () => { ls.set("ks.wallet", "dev"); setOwner(devOwner(cfg!)); };
-  const connectBrowser = () =>
-    browserOwner(cfg!).then((o) => { ls.set("ks.wallet", "browser"); setOwner(o); }).catch((e) => say("hold", e.message, "Wallet"));
+  const connectDev = () => {
+    ls.set("ks.wallet", "dev");
+    setGate("connect");
+    setTimeout(() => setOwner(devOwner(cfg!)), reduceMotion() ? 0 : 660);
+  };
+  /** Connect the wallet the person picked; the connect screen shows each step and any error. */
+  const connectBrowser = async (w: WalletInfo, step: (s: "account" | "network") => void, live: () => boolean) => {
+    const o = await browserOwner(cfg!, { rdns: w.rdns, step, live });
+    // the person stopped waiting and the wallet answered later: nothing happens, their next click connects
+    if (!live()) return;
+    ls.set("ks.wallet", "browser");
+    ls.set("ks.walletRdns", w.rdns);
+    // the panels sweep in over the screen, which shows the wallet as connected, and the next screen is put
+    // in place under them once they cover it
+    setGate("connect");
+    setTimeout(() => setOwner(o), reduceMotion() ? 0 : 660);
+  };
   async function createAccount() {
     const salt = keccak256(toHex(`${owner!.address}-${Date.now()}`));
     const ok = await tx("Creating your protected wallet", () => write(cfg!.factory, KillswitchFactoryAbi, "createAccount", [cfg!.guardian, salt]), { text: "Protected wallet created. You're on it now." });
@@ -381,52 +422,75 @@ export function App() {
       else say("hold", "Notifications are blocked for this site. Allow them in the browser's site settings.", "Notifications");
     });
   };
-  const disconnect = () => { ls.set("ks.wallet", ""); setOwner(null); setAccounts(null); setAccount(null); setInfo(null); setOps([]); };
+  /** Leave: the wallet is asked to forget this site (the site beside the app then shows no wallet either). */
+  const disconnect = async () => {
+    const was = owner?.kind;
+    if (was === "browser") await revokeWallet();
+    ls.set("ks.wallet", "");
+    ls.set("ks.walletRdns", "");
+    setOwner(null); setAccounts(null); setAccount(null); setInfo(null); setOps([]); setSheet(null); setPanel(null);
+    say("ok", was === "browser" ? "Your wallet no longer shares its address with Killswitch." : "The local test wallet is signed out.", "Disconnected");
+  };
 
-  // ---- screens before the app
-  if (cfgErr) return <><Offline onRetry={loadCfg} /><Toasts /></>;
-  if (!cfg) return <Boot />;
-  if (owner && accounts === null) return <Boot />;
-  if (!owner || accounts === null || accounts.length === 0) {
+  // the way in plays over whatever screen is there, and goes once that screen is ready; it sits in the same
+  // place whichever screen is under it, so it keeps playing while the screens change
+  const ready = !!cfgErr || (!!cfg && !checking && !(owner && accounts === null));
+  return (
+    <>
+      {screen()}
+      <Toasts />
+      {gate && <Gate cover={gate === "connect"} ready={ready} onDone={() => setGate(null)} />}
+    </>
+  );
+
+  function screen() {
+    // ---- screens before the app
+    if (cfgErr) return <Offline onRetry={loadCfg} />;
+    if (!cfg || checking || (owner && accounts === null)) return <Boot />;
+    if (!owner || accounts === null || accounts.length === 0) {
+      return (
+        <Onboarding
+          cfg={cfg} owner={owner} loading={!!owner && accounts === null} busy={busy}
+          onDev={connectDev} onConnect={connectBrowser} onCreate={createAccount} onDisconnect={disconnect}
+        />
+      );
+    }
+
+    const guardianPaused = (a: Agent) =>
+      a.paused && ops.some((o) => o.agent_id.toLowerCase() === a.id.toLowerCase() && (o.status === "rejected" || (o.source === "bypass" && o.verdict === "reject")));
+    const app: App | null = info && account
+      ? {
+          cfg, owner, info, ops, prices, busy, held, pend, account, accounts, alerts, theme, notify,
+          go, ask: setSheet, open: setPanel, decide, agentTx, faucet, createAccount, setAccount, setTheme, setNotify, disconnect, guardianPaused,
+        }
+      : null;
+
     return (
-      <>
-        <Onboarding cfg={cfg} owner={owner} loading={!!owner && accounts === null} busy={busy} onDev={connectDev} onBrowser={connectBrowser} onCreate={createAccount} />
-        <Toasts />
-      </>
+      <div className="app">
+        <Side
+          page={page} go={go} held={held.length} cfg={cfg} owner={owner} accounts={accounts} account={account} setAccount={setAccount}
+          total={info && info.address.toLowerCase() === account?.toLowerCase() ? balanceUsd(cfg, info.balances, prices) : null}
+          live={live} busy={busy} onCreate={createAccount} onDisconnect={disconnect}
+        />
+        <main className="main">
+          <div className="main-in">
+            <Top
+              page={page} cfg={cfg} owner={owner} live={live} alerts={alerts} account={account} ring={ring} go={go} open={setPanel}
+              accounts={accounts} setAccount={setAccount} busy={busy} onCreate={createAccount} onDisconnect={disconnect}
+            />
+            {!app ? <Skeleton /> : (
+              <div className="page" key={page}>
+                {page === "home" && <HomePage app={app} />}
+                {page === "agents" && <AgentsPage app={app} />}
+                {page === "activity" && <ActivityPage app={app} />}
+                {page === "settings" && <SettingsPage app={app} />}
+              </div>
+            )}
+          </div>
+        </main>
+        <Tabs page={page} go={go} held={held.length} />
+        {app && <Flows app={app} sheet={sheet} panel={panel} setSheet={setSheet} setPanel={setPanel} grant={grant} killAll={killAll} withdraw={withdraw} />}
+      </div>
     );
   }
-
-  const guardianPaused = (a: Agent) =>
-    a.paused && ops.some((o) => o.agent_id.toLowerCase() === a.id.toLowerCase() && (o.status === "rejected" || (o.source === "bypass" && o.verdict === "reject")));
-  const app: App | null = info && account
-    ? {
-        cfg, owner, info, ops, prices, busy, held, pend, account, accounts, alerts, theme, notify,
-        go, ask: setSheet, open: setPanel, decide, agentTx, faucet, createAccount, setAccount, setTheme, setNotify, disconnect, guardianPaused,
-      }
-    : null;
-
-  return (
-    <div className="app">
-      <Side page={page} go={go} held={held.length} cfg={cfg} owner={owner} accounts={accounts} account={account} setAccount={setAccount} live={live} busy={busy} onCreate={createAccount} />
-      <main className="main">
-        <div className="main-in">
-          <Top
-            page={page} cfg={cfg} owner={owner} live={live} alerts={alerts} account={account} ring={ring} go={go} open={setPanel}
-            accounts={accounts} setAccount={setAccount} busy={busy} onCreate={createAccount}
-          />
-          {!app ? <Skeleton /> : (
-            <div className="page" key={page}>
-              {page === "home" && <HomePage app={app} />}
-              {page === "agents" && <AgentsPage app={app} />}
-              {page === "activity" && <ActivityPage app={app} />}
-              {page === "settings" && <SettingsPage app={app} />}
-            </div>
-          )}
-        </div>
-      </main>
-      <Tabs page={page} go={go} held={held.length} />
-      {app && <Flows app={app} sheet={sheet} panel={panel} setSheet={setSheet} setPanel={setPanel} grant={grant} killAll={killAll} withdraw={withdraw} />}
-      <Toasts />
-    </div>
-  );
 }

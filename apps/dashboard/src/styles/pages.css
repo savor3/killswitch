@@ -738,16 +738,13 @@
   color: var(--on-ink);
   isolation: isolate;
 }
+/* the ground under the aurora's squares (aurora.tsx), as on the landing's hero */
 .onb-l::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
-  background:
-    linear-gradient(90deg, var(--ink) 1px, transparent 1px) 0 0 / 7px 7px,
-    linear-gradient(var(--ink) 1px, transparent 1px) 0 0 / 7px 7px,
-    radial-gradient(90% 70% at 50% 0%, rgba(255, 32, 40, 0.5), rgba(255, 32, 40, 0) 70%),
-    rgb(16, 12, 12);
+  background: rgb(16, 12, 12);
 }
 .onb-l .logo {
   color: var(--on-ink);
@@ -759,7 +756,10 @@
   line-height: 1;
   letter-spacing: -0.05em;
 }
-.onb-l h1 span {
+.onb-l h1 .ln {
+  display: block;
+}
+.onb-l h1 .red {
   color: var(--red);
 }
 .onb-l .lead {

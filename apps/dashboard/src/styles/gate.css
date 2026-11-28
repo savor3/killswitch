@@ -1,0 +1,576 @@
+/* ------------------------------------------------------------------ the way in (gate.tsx) */
+/* the site's opening: three panels (soft red, red, black) cover the screen, the lockup waits on the black with a
+   red square stepping through its letters, then the panels sweep away to the right, black first */
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+}
+.gate-panels,
+.gate-panels i {
+  position: absolute;
+  inset: 0;
+}
+.gate-panels i:nth-child(1) {
+  background: #ff8a8e;
+}
+.gate-panels i:nth-child(2) {
+  background: var(--red);
+}
+.gate-panels i:nth-child(3) {
+  background: #000;
+}
+.gate.is-cover .gate-panels i {
+  animation: gate-in 540ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+.gate.is-cover .gate-panels i:nth-child(2) {
+  animation-delay: 50ms;
+}
+.gate.is-cover .gate-panels i:nth-child(3) {
+  animation-delay: 100ms;
+}
+@keyframes gate-in {
+  from {
+    transform: translate3d(-101%, 0, 0);
+  }
+}
+.gate.is-out .gate-panels i {
+  animation: gate-out 720ms cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+.gate.is-out .gate-panels i:nth-child(2) {
+  animation-delay: 70ms;
+}
+.gate.is-out .gate-panels i:nth-child(1) {
+  animation-delay: 140ms;
+}
+@keyframes gate-out {
+  to {
+    transform: translate3d(101%, 0, 0);
+  }
+}
+.gate-lockup {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #fff;
+  transition: opacity 280ms var(--ease-out);
+}
+.gate.is-cover .gate-lockup {
+  opacity: 0;
+}
+.gate.is-out .gate-lockup {
+  opacity: 0;
+  transition-duration: 140ms;
+}
+.gate-lockup .mark {
+  width: 40px;
+  height: auto;
+  fill: rgba(255, 255, 255, 0.22);
+  transition: fill 300ms var(--ease-out);
+}
+.gate-lockup .mark.is-on {
+  fill: #fff;
+}
+.gate-word {
+  display: flex;
+  font: 700 30px/1 var(--sans);
+  letter-spacing: -0.02em;
+}
+.gate-word span {
+  padding: 3px 1px;
+  color: rgba(255, 255, 255, 0.22);
+}
+.gate-word span.is-lit {
+  color: #fff;
+}
+.gate-word span.is-at {
+  background: var(--red);
+  color: #fff;
+}
+
+/* opened from the site: black from the first paint until the gate is drawn */
+html.entering,
+html.entering body {
+  background: #000 !important;
+}
+html.entering #root {
+  visibility: hidden;
+}
+
+/* ------------------------------------------------------------------ connecting a wallet (connect.tsx) */
+.wl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wl-i {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 16px 10px 12px;
+  border: 0;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--card-line);
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    box-shadow var(--t-hover) var(--ease-out),
+    background-color var(--t-hover) var(--ease-out),
+    opacity 200ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+.wl-i:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1px var(--fg);
+}
+.wl-i:active:not(:disabled) {
+  transform: scale(0.99);
+}
+.wl-i:disabled {
+  cursor: default;
+}
+.wl-i:disabled:not(.is-account):not(.is-network):not(.is-done) {
+  opacity: 0.45;
+}
+.wl-i.is-account,
+.wl-i.is-network {
+  box-shadow: inset 0 0 0 1.5px var(--fg);
+}
+.wl-i.is-done {
+  box-shadow: inset 0 0 0 1.5px var(--fg);
+}
+.wl-i.is-bad,
+.wl-i.is-bad:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1.5px var(--red);
+}
+.wl-ic {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--well);
+}
+.wl-ic img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+.wl-t {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.wl-t b {
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.wl-i.is-bad .wl-t .lbl {
+  color: var(--red-text);
+}
+.wl-r {
+  display: grid;
+  place-items: center;
+  color: var(--faint);
+}
+.wl-look {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 0 16px;
+  border-radius: var(--r-lg);
+  background: var(--well);
+  font: 500 11.5px/1 var(--mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.wl-none {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 20px;
+  border-radius: var(--r-lg);
+  background: var(--well);
+}
+.wl-none b {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+.wl-none p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.wl-get {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 4px;
+}
+.wl-get a:not(.btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fg);
+  border-bottom: 1px solid var(--red);
+}
+.wl-get .btn {
+  padding: 0 14px;
+  height: 36px;
+}
+.wl-again,
+.linkish {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--red);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.wl-again {
+  margin-top: 4px;
+  font-size: 13px;
+}
+.wl-err {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--red-text);
+}
+.wl-err .sq {
+  flex: none;
+  transform: translateY(-1px);
+}
+.wl-note {
+  font-size: 12.5px;
+}
+.wl-quiet {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.wl-quiet .linkish {
+  font-size: inherit;
+}
+
+/* toasts on the first run: under the card on the right, not across the seam of the two halves (the app's rule
+   centres them beside a side rail this screen doesn't have), and no slide as the screen changes under them */
+@media (min-width: 901px) {
+  body:has(.onb) .toasts {
+    left: calc(100% - 100% / 2.05 / 2);
+    transition: none;
+  }
+}
+@media (max-width: 900px) {
+  body:has(.onb) .toasts {
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ the first run's dark half */
+/* the landing hero's aurora behind the words (aurora.tsx): its squares fade up once drawn, after the way in */
+.aurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.aurora.is-panel {
+  opacity: 0;
+  transition: opacity 1.6s var(--ease) 0.1s;
+}
+.aurora.is-panel[data-on] {
+  opacity: 1;
+}
+:root[data-gate] .aurora.is-panel[data-on],
+:root.entering .aurora.is-panel[data-on] {
+  opacity: 0;
+}
+.onb-l > :not(.aurora) {
+  position: relative;
+  z-index: 1;
+}
+.onb-logo {
+  align-self: flex-start;
+}
+/* a soft dark pool under the words keeps them clear of the light, as on the landing */
+.onb-copy::before {
+  content: "";
+  position: absolute;
+  inset: -45% -35% -45% -25%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(12, 8, 8, 0.72), rgba(12, 8, 8, 0));
+  pointer-events: none;
+}
+
+/* the way in: the logo, the words and the list rise one after another, then the card's parts on the right
+   (a new step's too); all of it waits while the way in still covers the screen, and plays as it sweeps away */
+@keyframes onb-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+}
+.onb-logo,
+.onb-copy .ln,
+.onb-copy .lead,
+.ticks li,
+.onb-card > *,
+.wl > li {
+  animation: onb-rise 820ms var(--ease-out) both;
+}
+.onb-logo {
+  animation-delay: 80ms;
+}
+.onb-copy .ln:first-child {
+  animation-delay: 160ms;
+}
+.onb-copy .ln + .ln {
+  animation-delay: 250ms;
+}
+.onb-copy .lead {
+  animation-delay: 380ms;
+}
+.ticks li:nth-child(1) {
+  animation-delay: 520ms;
+}
+.ticks li:nth-child(2) {
+  animation-delay: 600ms;
+}
+.ticks li:nth-child(3) {
+  animation-delay: 680ms;
+}
+.onb-card > * {
+  animation-duration: 640ms;
+}
+.onb-card > :nth-child(2) {
+  animation-delay: 50ms;
+}
+.onb-card > :nth-child(3) {
+  animation-delay: 100ms;
+}
+.onb-card > :nth-child(4) {
+  animation-delay: 150ms;
+}
+.onb-card > :nth-child(5) {
+  animation-delay: 200ms;
+}
+.onb-card > :nth-child(n + 6) {
+  animation-delay: 250ms;
+}
+/* the list itself stays; its wallets come in one by one */
+.onb-card > .wl {
+  animation: none;
+}
+.wl > li {
+  animation-duration: 560ms;
+  animation-delay: calc(140ms + var(--i, 0) * 70ms);
+}
+/* the step you are on fills its bar */
+@keyframes step-on {
+  from {
+    transform: scaleX(0);
+  }
+}
+.steps li.on::before {
+  transform-origin: left center;
+  animation: step-on 900ms var(--ease-out) 260ms both;
+}
+:root[data-gate] :is(.onb-logo, .onb-copy .ln, .onb-copy .lead, .ticks li, .onb-card > *, .wl > li),
+:root.entering :is(.onb-logo, .onb-copy .ln, .onb-copy .lead, .ticks li, .onb-card > *, .wl > li),
+:root[data-gate] .steps li.on::before,
+:root.entering .steps li.on::before {
+  animation-play-state: paused;
+}
+.wl-r .ic {
+  transition: transform var(--t-hover) var(--ease-out);
+}
+.wl-i:hover:not(:disabled) .wl-r .ic {
+  transform: translate3d(2px, 0, 0);
+}
+
+/* step 2: the wallet that will own it, and a way to switch */
+.owned {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px 10px 10px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--card-line);
+}
+.owned-t {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.owned-t b {
+  font: 500 13.5px/1.1 var(--mono);
+}
+.owned-t span {
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.2;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.owned .linkish {
+  font-size: 13px;
+}
+.owned .linkish:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.onb-fine {
+  font-size: 12.5px;
+}
+
+/* step 2's picture: a red square leaves your wallet along the boxes' top edge, sinks into the protected wallet,
+   which fills, comes out the far side and goes on to the agents; every six seconds, a second after the step
+   appears. The boxes fill as it reaches them. */
+.flow {
+  position: relative;
+}
+.flow > div {
+  animation: flow-fill 6s var(--ease-out) infinite both;
+}
+.flow > div:nth-of-type(1) {
+  animation-delay: 1.2s;
+}
+.flow > div:nth-of-type(2) {
+  animation-delay: 3.05s;
+}
+.flow > div:nth-of-type(3) {
+  animation-delay: 5.15s;
+}
+@keyframes flow-fill {
+  0%,
+  20%,
+  100% {
+    background-color: var(--well);
+    box-shadow: inset 0 0 0 1px transparent;
+  }
+  6% {
+    background-color: var(--red-wash);
+    box-shadow: inset 0 0 0 1px var(--red-line);
+  }
+}
+.flow-tok {
+  position: absolute;
+  top: -4px;
+  left: 15%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: var(--red);
+  pointer-events: none;
+  animation: flow-tok 6s linear 1.2s infinite both;
+}
+@keyframes flow-tok {
+  0% {
+    left: 15%;
+    opacity: 0;
+    transform: scale(0.3);
+    animation-timing-function: var(--ease-out);
+  }
+  6% {
+    left: 15%;
+    opacity: 1;
+    transform: none;
+    animation-timing-function: var(--ease-io);
+  }
+  30% {
+    left: 50%;
+    opacity: 1;
+    transform: none;
+    animation-timing-function: ease-in;
+  }
+  35% {
+    left: 50%;
+    opacity: 0;
+    transform: scale(0.3);
+    animation-timing-function: var(--ease-out);
+  }
+  42% {
+    left: 50%;
+    opacity: 1;
+    transform: none;
+    animation-timing-function: var(--ease-io);
+  }
+  64% {
+    left: 85%;
+    opacity: 1;
+    transform: none;
+    animation-timing-function: ease-in;
+  }
+  70%,
+  100% {
+    left: 85%;
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+@media (max-width: 700px) {
+  .flow-tok {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ a wallet's face (kit.tsx Identicon) */
+.idn {
+  display: block;
+  flex: none;
+}
+.idn-bg {
+  fill: #161111;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+.idn .on {
+  fill: var(--red);
+}
+.idn .dim {
+  fill: rgba(255, 32, 40, 0.45);
+}
+.idn .off {
+  fill: rgba(255, 255, 255, 0.07);
+}
+a.menu-i {
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate {
+    display: none;
+  }
+}
